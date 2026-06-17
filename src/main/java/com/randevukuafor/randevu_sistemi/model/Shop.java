@@ -2,6 +2,8 @@ package com.randevukuafor.randevu_sistemi.model;
 
 import jakarta.persistence.*;
 
+import java.util.List;
+
 @Entity
 @Table(name = "shops")
 public class Shop {
@@ -95,4 +97,10 @@ public class Shop {
     public void setOwner(User owner) {
         this.owner = owner;
     }
+
+    @OneToMany(mappedBy = "shop", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Service> services;
+
+    @OneToMany(mappedBy = "shop", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Employee> employees;
 }
