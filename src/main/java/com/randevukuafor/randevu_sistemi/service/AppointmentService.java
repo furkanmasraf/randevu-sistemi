@@ -8,6 +8,7 @@ import com.randevukuafor.randevu_sistemi.exception.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -31,6 +32,7 @@ public class AppointmentService {
     // Girdi: Request, Çıktı: DTO
     public AppointmentDTO createAppointment(CreateAppointmentRequest request) {
 
+        // 1. Varlık Kontrolleri
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("Müşteri bulunamadı! ID: " + request.getUserId()));
 
@@ -43,7 +45,15 @@ public class AppointmentService {
         com.randevukuafor.randevu_sistemi.model.Service service = serviceRepository.findById(request.getServiceId())
                 .orElseThrow(() -> new ResourceNotFoundException("Hizmet bulunamadı! ID: " + request.getServiceId()));
 
-        // Entity nesnemizi oluşturup veritabanı ilişkilerini bağlıyoruz
+        // 2. ÇAKIŞMA KONTROLÜ (Kayıt işleminden önce kulis arkasında kontrol ediyoruz)
+        Optional<Appointment> conflictingAppointment = appointmentRepository
+                .findByEmployeeIdAndAppointmentTimeAndStatusNot(request.getEmployeeId(), request.getAppointmentTime(), "CANCELLED");
+
+        if (conflictingAppointment.isPresent()) {
+            throw new IllegalArgumentException("Seçilen çalışan bu saatte doludur! Lütfen başka bir saat veya çalışan seçiniz.");
+        }
+
+        // 3. İlişkileri Bağlama ve Nesne Oluşturma
         Appointment appointment = new Appointment();
         appointment.setUser(user);
         appointment.setShop(shop);
@@ -51,13 +61,14 @@ public class AppointmentService {
         appointment.setService(service);
         appointment.setAppointmentTime(request.getAppointmentTime());
 
+        // 4. Veritabanına Kaydetme
         Appointment savedAppointment = appointmentRepository.save(appointment);
 
-        // Veritabanına kaydolduktan sonra bunu temiz bir DTO'ya dönüştürüp dönüyoruz
+        // 5. DTO Dönüşümü ve Yanıt Gönderme
         return convertToDTO(savedAppointment);
     }
 
-    // Listeleme metotlarını da DTO listesi dönecek şekilde güncelliyoruz
+    // Listeleme metotları
     public List<AppointmentDTO> getAppointmentsByUser(Long userId) {
         return appointmentRepository.findByUserId(userId)
                 .stream()
