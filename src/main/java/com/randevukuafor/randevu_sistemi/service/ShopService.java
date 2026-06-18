@@ -2,6 +2,8 @@ package com.randevukuafor.randevu_sistemi.service;
 
 import com.randevukuafor.randevu_sistemi.model.Shop;
 import com.randevukuafor.randevu_sistemi.repository.ShopRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -16,12 +18,14 @@ public class ShopService {
     }
 
     // Yeni dükkan kaydetme
+    @CacheEvict(value = "shops", allEntries = true)
     public Shop createShop(Shop shop) {
         // İleride buraya "Bu kullanıcı gerçekten SHOP_OWNER mı?" gibi kurumsal kontroller ekleyebiliriz
         return shopRepository.save(shop);
     }
 
     // Tüm dükkanları listeleme
+    @Cacheable(value = "shops")
     public List<Shop> getAllShops() {
         return shopRepository.findAll();
     }
