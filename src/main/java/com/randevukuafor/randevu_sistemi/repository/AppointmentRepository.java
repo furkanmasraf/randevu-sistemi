@@ -18,4 +18,6 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
 
     // KRİTİK SORGU: Seçilen çalışan, seçilen saatte ve İPTAL EDİLMEMİŞ bir randevuya sahip mi?
     Optional<Appointment> findByEmployeeIdAndAppointmentTimeAndStatusNot(Long employeeId, LocalDateTime appointmentTime, String status);
+
+    boolean existsByEmployeeIdAndAppointmentTimeAndStatusNot(Long employeeId, LocalDateTime appointmentTime, String status);
 }
