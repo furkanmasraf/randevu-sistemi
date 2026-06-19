@@ -6,6 +6,7 @@ import com.randevukuafor.randevu_sistemi.model.Role;
 import com.randevukuafor.randevu_sistemi.model.User;
 import com.randevukuafor.randevu_sistemi.repository.UserRepository;
 import com.randevukuafor.randevu_sistemi.security.JwtService;
+import io.github.resilience4j.retry.annotation.Retry;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -25,7 +26,8 @@ public class AuthService {
     @Autowired
     private JwtService jwtService;
 
-    // 1. KULLANICI KAYIT METODU
+    // 1. KULLANICI KAYIT METODU (Doğuş Teknoloji Kalkanı Burada Devrede!)
+    @Retry(name = "authRetry", fallbackMethod = "fallbackRegister")
     public String register(RegisterRequest request) {
         // Email zaten alınmış mı kontrolü
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
@@ -46,7 +48,16 @@ public class AuthService {
         return "Kullanıcı başarıyla kaydedildi!";
     }
 
-    // 2. KULLANICI GİRİŞ METODU
+    // 2. FALLBACK METODU (B PLANI)
+    // ÖNEMLİ: Geri dönüş tipi (String) ve ilk parametresi (RegisterRequest) asıl metotla birebir aynı!
+    public String fallbackRegister(RegisterRequest request, Exception e) {
+        System.out.println("Yakalanan Hata: " + e.getMessage());
+
+        // Veritabanı çöktüğünde veya tıkandığında kullanıcıya döneceğimiz güvenli mesaj
+        return "Şu anda sistemlerimizde geçici bir yoğunluk yaşanıyor. Lütfen birkaç dakika sonra tekrar deneyiniz.";
+    }
+
+    // 3. KULLANICI GİRİŞ METODU
     public Map<String, String> login(LoginRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("E-posta veya şifre hatalı!"));
