@@ -26,7 +26,6 @@ public class AuthService {
     @Autowired
     private JwtService jwtService;
 
-    // 1. KULLANICI KAYIT METODU (Doğuş Teknoloji Kalkanı Burada Devrede!)
     @Retry(name = "authRetry", fallbackMethod = "fallbackRegister")
     public String register(RegisterRequest request) {
         // Email zaten alınmış mı kontrolü
