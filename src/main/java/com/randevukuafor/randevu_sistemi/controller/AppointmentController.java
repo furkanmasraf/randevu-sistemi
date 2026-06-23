@@ -34,4 +34,10 @@ public class AppointmentController {
         List<AppointmentDTO> appointments = appointmentService.getAppointmentsByShop(shopId);
         return ResponseEntity.ok(appointments);
     }
+
+    @PutMapping("/{id}/cancel")
+    public ResponseEntity<AppointmentDTO> cancelAppointment(@PathVariable Long id) {
+        AppointmentDTO cancelledAppointment = appointmentService.cancelAppointment(id);
+        return ResponseEntity.ok(cancelledAppointment);
+    }
 }
