@@ -59,4 +59,16 @@ public class GlobalExceptionHandler {
         );
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
+
+    @ExceptionHandler(EmailAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponse> handleEmailAlreadyExists(EmailAlreadyExistsException exception) {
+        // Senin constructor sıran: (status, error, message)
+        ErrorResponse error = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),       // status: 400
+                "Bad Request",                        // error: Hata tipi
+                exception.getMessage()                // message: "Bu email adresi zaten kullanımda!"
+        );
+
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
 }

@@ -1,5 +1,7 @@
 package com.randevukuafor.randevu_sistemi.service;
 
+import com.randevukuafor.randevu_sistemi.dto.RegisterRequest;
+import com.randevukuafor.randevu_sistemi.exception.EmailAlreadyExistsException;
 import com.randevukuafor.randevu_sistemi.model.User;
 import com.randevukuafor.randevu_sistemi.repository.UserRepository;
 import org.springframework.stereotype.Service;
@@ -17,11 +19,27 @@ public class UserService {
     }
 
     // Yeni kullanıcı kaydetme metodu
-    public User createUser(User user) {
-        // İleride buraya "Email zaten kayıtlı mı?" kontrolü ekleyeceğiz
-        if(userRepository.findByEmail(user.getEmail()).isPresent()) {
-            throw new RuntimeException("Bu email adresi zaten kullanımda!");
+    public User createUser(RegisterRequest request) {
+        // 1. Kontrol: DTO'dan gelen email üzerinden benzersizlik kontrolü yapılıyor
+        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+            throw new EmailAlreadyExistsException("Bu email adresi zaten kullanımda!");
         }
+
+        // 2. Mapping (Eşleme): DTO verilerini yeni bir User Entity nesnesine aktarıyoruz
+        User user = new User();
+        user.setFirstName(request.getFirstName());
+        user.setLastName(request.getLastName());
+        user.setEmail(request.getEmail());
+        user.setPhoneNumber(request.getPhone()); // Hatırlatma: Entity'de adı phoneNumber, DTO'da phone.
+
+        // 💡 Şifre şimdilik düz metin olarak set ediliyor.
+        // Spring Security adımına geçtiğimizde burayı passwordEncoder ile hash'leyeceğiz!
+        user.setPassword(request.getPassword());
+
+        // Varsayılan olarak her yeni kayıt olanı CUSTOMER (Müşteri) rolüyle başlatalım
+        user.setRole(com.randevukuafor.randevu_sistemi.model.Role.CUSTOMER);
+
+        // 3. Kayıt: Tamamen hazır olan Entity nesnesini veritabanına gönderiyoruz
         return userRepository.save(user);
     }
 
