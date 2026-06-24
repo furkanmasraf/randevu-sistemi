@@ -2,12 +2,14 @@ package com.randevukuafor.randevu_sistemi.service;
 
 import com.randevukuafor.randevu_sistemi.dto.LoginRequest;
 import com.randevukuafor.randevu_sistemi.dto.RegisterRequest;
+import com.randevukuafor.randevu_sistemi.exception.EmailAlreadyExistsException;
 import com.randevukuafor.randevu_sistemi.model.Role;
 import com.randevukuafor.randevu_sistemi.model.User;
 import com.randevukuafor.randevu_sistemi.repository.UserRepository;
 import com.randevukuafor.randevu_sistemi.security.JwtService;
 import io.github.resilience4j.retry.annotation.Retry;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.BadCredentialsException; // Standart güvenlik hatası
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -28,9 +30,9 @@ public class AuthService {
 
     @Retry(name = "authRetry", fallbackMethod = "fallbackRegister")
     public String register(RegisterRequest request) {
-        // Email zaten alınmış mı kontrolü
+        // Eski RuntimeException yerine kendi yazdığım özel hatayı fırlatıyorum..
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-            throw new RuntimeException("Bu email adresi zaten kullanımda!");
+            throw new EmailAlreadyExistsException("Bu email adresi zaten kullanımda!");
         }
 
         User user = new User();
@@ -38,42 +40,40 @@ public class AuthService {
         user.setLastName(request.getLastName());
         user.setEmail(request.getEmail());
         user.setPhoneNumber(request.getPhone());
-        user.setRole(Role.valueOf("CUSTOMER")); // Varsayılan müşteri rolü
+        user.setRole(Role.CUSTOMER);
 
-        // ŞİFREYİ BCrypt İLE MASKELİYORUZ
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-
         userRepository.save(user);
         return "Kullanıcı başarıyla kaydedildi!";
     }
 
-    // 2. FALLBACK METODU (B PLANI)
-    // ÖNEMLİ: Geri dönüş tipi (String) ve ilk parametresi (RegisterRequest) asıl metotla birebir aynı!
     public String fallbackRegister(RegisterRequest request, Exception e) {
         System.out.println("Yakalanan Hata: " + e.getMessage());
-
-        // Veritabanı çöktüğünde veya tıkandığında kullanıcıya döneceğimiz güvenli mesaj
         return "Şu anda sistemlerimizde geçici bir yoğunluk yaşanıyor. Lütfen birkaç dakika sonra tekrar deneyiniz.";
     }
 
-    // 3. KULLANICI GİRİŞ METODU
+    // kullanıcı giriş metodu
     public Map<String, String> login(LoginRequest request) {
+        // Güvenlik gereği e-posta veya şifre yanlışsa hep aynı genel hatayı döneriz (Kötü niyetli taramaları önlemek için)
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("E-posta veya şifre hatalı!"));
+                .orElseThrow(() -> new BadCredentialsException("E-posta veya şifre hatalı!"));
 
-        // Girilen şifre ile DB'deki hash'lenmiş şifre uyuşuyor mu?
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new RuntimeException("E-posta veya şifre hatalı!");
+            throw new BadCredentialsException("E-posta veya şifre hatalı!");
         }
 
-        // Giriş başarılıysa JWT token üretip dönüyoruz
-        String token = jwtService.generateToken(user.getEmail());
+        // DEFERDEKİ MADDEYİ ÇÖZÜYORUZ: Token içine claims (ekstra veri) hazırlığı
+        Map<String, Object> extraClaims = new HashMap<>();
+        extraClaims.put("role", user.getRole().name()); // Token gövdesine rolleri (CUSTOMER/BARBER) yazdık
+
+        // Düz metot yerine, hazırladığımız claims haritasını alan aşırı yüklenmiş (overloaded) metodu çağırıyoruz
+        String token = jwtService.generateToken(extraClaims, user.getEmail());
 
         Map<String, String> response = new HashMap<>();
         response.put("token", token);
         response.put("firstName", user.getFirstName());
         response.put("lastName", user.getLastName());
-        response.put("role", String.valueOf(user.getRole()));
+        response.put("role", user.getRole().name());
 
         return response;
     }
