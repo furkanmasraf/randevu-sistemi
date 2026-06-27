@@ -1,9 +1,10 @@
 package com.randevukuafor.randevu_sistemi.security;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -11,49 +12,66 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
-    @Autowired
-    private JwtAuthenticationFilter jwtAuthFilter;
+    private final JwtAuthenticationFilter jwtAuthFilter;
+
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthFilter) {
+        this.jwtAuthFilter = jwtAuthFilter;
+    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // 1. REST API geliştirdiğimiz için CSRF korumasını kapatıyoruz
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
-
-                // 2. Hangi isteklere izin verilecek, hangileri kilitlenecek ayarlıyoruz
                 .authorizeHttpRequests(auth -> auth
-                        // Giriş ve kayıt işlemlerini herkes yapabilir
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
-
-                        // Sadece BERBER rolü olanlar yeni dükkan ekleyebilir veya silebilir!
                         .requestMatchers(HttpMethod.POST, "/api/shops/**").hasRole("BARBER")
                         .requestMatchers(HttpMethod.DELETE, "/api/shops/**").hasRole("BARBER")
-
-                        // Randevu alma veya dükkanları listeleme işlemlerini hem MÜŞTERİ hem BERBER yapabilir
+                        .requestMatchers(HttpMethod.GET, "/api/shops/**").hasAnyRole("CUSTOMER", "BARBER")
                         .requestMatchers("/api/appointments/**").hasAnyRole("CUSTOMER", "BARBER")
-
-                        // Geri kalan her şey giriş yapmış olmayı zorunlu kılar
                         .anyRequest().authenticated()
                 )
-
-                // 3. JWT kullandığımız için session (oturum) yönetimini STATELESS (durumsuz) yapıyoruz
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
-
-                // 4. Kendi yazdığımız JWT filtresini, Spring'in standart UsernamePassword filtresinin önüne ekliyoruz
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
     @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+        return config.getAuthenticationManager();
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        // Vite projenin ayağa kalktığı tüm olası portları desteklemesi için origin listesini geniş tutuyoruz
+        configuration.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:5174"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Cache-Control"));
+        configuration.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
+
+    @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(); // Şifreleri BCrypt ile koruma altına alıyoruz
+        return new BCryptPasswordEncoder();
     }
 }

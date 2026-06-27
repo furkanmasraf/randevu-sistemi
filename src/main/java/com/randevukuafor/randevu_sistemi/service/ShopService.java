@@ -18,14 +18,14 @@ public class ShopService {
     }
 
     // Yeni dükkan kaydetme
-    @CacheEvict(value = "shops", allEntries = true)
+    //@CacheEvict(value = "shops", allEntries = true)
     public Shop createShop(Shop shop) {
         // İleride buraya "Bu kullanıcı gerçekten SHOP_OWNER mı?" gibi kurumsal kontroller ekleyebiliriz
         return shopRepository.save(shop);
     }
 
     // Tüm dükkanları listeleme
-    @Cacheable(value = "shops")
+    //@Cacheable(value = "shops")
     public List<Shop> getAllShops() {
         return shopRepository.findAll();
     }
