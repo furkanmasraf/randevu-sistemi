@@ -28,6 +28,7 @@ public class AuthService {
     @Autowired
     private JwtService jwtService;
 
+    // Kayıt Olma Metodu (Dinamik Rol Destekli)
     @Retry(name = "authRetry", fallbackMethod = "fallbackRegister")
     public String register(RegisterRequest request) {
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
@@ -38,20 +39,27 @@ public class AuthService {
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
         user.setEmail(request.getEmail());
-        user.setPhoneNumber(request.getPhone());
-        user.setRole(Role.CUSTOMER);
+        user.setPhoneNumber(request.getPhoneNumber()); // DTO'daki yeni isimlendirmeyle eşitlendi
+
+        // Ön yüzden gelen String rolü (CUSTOMER/BARBER) Enum tipine dinamik olarak dönüştürüyoruz
+        try {
+            user.setRole(Role.valueOf(request.getRole().toUpperCase()));
+        } catch (IllegalArgumentException | NullPointerException e) {
+            user.setRole(Role.CUSTOMER); // Hata durumunda güvenli liman olarak CUSTOMER atıyoruz
+        }
 
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         userRepository.save(user);
         return "Kullanıcı başarıyla kaydedildi!";
     }
 
+    // Resilience4j Fallback Metodu
     public String fallbackRegister(RegisterRequest request, Exception e) {
         System.out.println("Yakalanan Hata: " + e.getMessage());
         return "Şu anda sistemlerimizde geçici bir yoğunluk yaşanıyor. Lütfen birkaç dakika sonra tekrar deneyiniz.";
     }
 
-    // kullanıcı giriş metodu
+    // Kullanıcı Giriş Metodu
     public Map<String, String> login(LoginRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new BadCredentialsException("E-posta veya şifre hatalı!"));

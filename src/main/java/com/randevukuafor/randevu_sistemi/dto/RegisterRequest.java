@@ -20,7 +20,10 @@ public class RegisterRequest {
     private String password;
 
     @NotBlank(message = "Telefon alanı boş bırakılamaz")
-    private String phone;
+    private String phoneNumber; // React'taki 'phoneNumber' ile tam eşitlendi
+
+    @NotBlank(message = "Rol alanı boş bırakılamaz")
+    private String role; // React'tan gelecek CUSTOMER veya BARBER bilgisini tutacak alan eklendi
 
     // --- GETTER VE SETTER METOTLARI ---
     public String getFirstName() {
@@ -55,11 +58,19 @@ public class RegisterRequest {
         this.password = password;
     }
 
-    public String getPhone() {
-        return phone;
+    public String getPhoneNumber() {
+        return phoneNumber;
     }
 
-    public void setPhone(String phone) {
-        this.phone = phone;
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
     }
 }

@@ -35,10 +35,10 @@ public class AppointmentService {
     @Autowired
     private WorkingHoursRepository workingHoursRepository;
 
-    // Girdi: Request, Çıktı: DTO
+    // 1. Randevu Kaydetme İş Mantığı
     public AppointmentDTO createAppointment(CreateAppointmentRequest request) {
 
-        // 1. Varlık Kontrolleri
+        // Varlık Kontrolleri
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("Müşteri bulunamadı! ID: " + request.getUserId()));
 
@@ -51,22 +51,20 @@ public class AppointmentService {
         com.randevukuafor.randevu_sistemi.model.Service service = serviceRepository.findById(request.getServiceId())
                 .orElseThrow(() -> new ResourceNotFoundException("Hizmet bulunamadı! ID: " + request.getServiceId()));
 
-        //  MESAİ VE ÇALIŞMA SAATLERİ KONTROLÜ
+        // MESAİ VE ÇALIŞMA SAATLERİ KONTROLÜ
         int requestDayOfWeek = request.getAppointmentTime().getDayOfWeek().getValue(); // 1 (Pazartesi) - 7 (Pazar)
         LocalTime requestTime = request.getAppointmentTime().toLocalTime();
 
-        // Çalışanın o güne ait aktif bir mesai kaydı var mı?
         WorkingHours workingHours = workingHoursRepository
                 .findByEmployeeIdAndDayOfWeekAndIsActiveTrue(request.getEmployeeId(), requestDayOfWeek)
                 .orElseThrow(() -> new IllegalArgumentException("Seçilen çalışan bu gün hizmet vermemektedir!"));
 
-        // Seçilen saat mesai saatleri dışındaysa kapıdan çevir
         if (requestTime.isBefore(workingHours.getStartTime()) || requestTime.isAfter(workingHours.getEndTime())) {
             throw new IllegalArgumentException("Seçilen saat çalışanın mesai saatleri dışındadır! Mesai: "
                     + workingHours.getStartTime() + " - " + workingHours.getEndTime());
         }
 
-        // 2. ÇAKIŞMA KONTROLÜ (Kayıt işleminden önce kulis arkasında kontrol ediyoruz)
+        // ÇAKIŞMA KONTROLÜ
         Optional<Appointment> conflictingAppointment = appointmentRepository
                 .findByEmployeeIdAndAppointmentTimeAndStatusNot(request.getEmployeeId(), request.getAppointmentTime(), "CANCELLED");
 
@@ -74,7 +72,7 @@ public class AppointmentService {
             throw new IllegalArgumentException("Seçilen çalışan bu saatte doludur! Lütfen başka bir saat veya çalışan seçiniz.");
         }
 
-        // 3. İlişkileri Bağlama ve Nesne Oluşturma
+        // İlişkileri Bağlama ve Nesne Oluşturma
         Appointment appointment = new Appointment();
         appointment.setUser(user);
         appointment.setShop(shop);
@@ -82,43 +80,43 @@ public class AppointmentService {
         appointment.setService(service);
         appointment.setAppointmentTime(request.getAppointmentTime());
 
-        // 4. Veritabanına Kaydetme
         Appointment savedAppointment = appointmentRepository.save(appointment);
-
-        // 5. DTO Dönüşümü ve Yanıt Gönderme
         return convertToDTO(savedAppointment);
     }
 
-    // iptal algoritması
+    //  2. Müşteri Randevu İptal Algoritması
     public AppointmentDTO cancelAppointment(Long appointmentId) {
-        // 1. Randevuyu bul, yoksa özel hatamızı fırlat
         Appointment appointment = appointmentRepository.findById(appointmentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Randevu bulunamadı! ID: " + appointmentId));
 
         LocalDateTime now = LocalDateTime.now();
 
-        // 2. Geçmiş randevu kontrolü
         if (appointment.getAppointmentTime().isBefore(now)) {
             throw new IllegalArgumentException("Geçmiş tarihteki bir randevuyu iptal edemezsiniz.");
         }
 
-        // 3. Zaman kontrolü (Şu an ile randevu saati arasındaki dakika farkı)
         long minutesBetween = Duration.between(now, appointment.getAppointmentTime()).toMinutes();
 
-        // 2 saat = 120 dakika kuralı
         if (minutesBetween < 120) {
             throw new IllegalArgumentException("Randevunuza 2 saatten az zaman kaldığı için iptal işlemini gerçekleştiremezsiniz.");
         }
 
-        // 4. Durumu güncelle ve kaydet
         appointment.setStatus("CANCELLED");
         Appointment updatedAppointment = appointmentRepository.save(appointment);
-
-        // 5. Kurumsal çıktı için DTO'ya dönüştür
         return convertToDTO(updatedAppointment);
     }
 
-    // Listeleme metotları
+    //  3. Dükkan Sahibinin (Berber) Randevu Durumunu Güncellemesi (APPROVED / REJECTED)
+    public AppointmentDTO updateAppointmentStatus(Long appointmentId, String newStatus) {
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Randevu bulunamadı! ID: " + appointmentId));
+
+        appointment.setStatus(newStatus.toUpperCase());
+        Appointment updatedAppointment = appointmentRepository.save(appointment);
+        return convertToDTO(updatedAppointment);
+    }
+
+    //  4. Listeleme Metotları
     public List<AppointmentDTO> getAppointmentsByUser(Long userId) {
         return appointmentRepository.findByUserId(userId)
                 .stream()
@@ -133,7 +131,17 @@ public class AppointmentService {
                 .collect(Collectors.toList());
     }
 
-    // Entity -> DTO Dönüşümünü yapan yardımcı metot (Manuel Mapping)
+    //  5. Berberin Kullanıcı Kimliğine Göre Kendi Dükkanının Randevularını Filtreleme
+    public List<AppointmentDTO> getAppointmentsByShopOwner(Long userId) {
+        // Sistem genelindeki randevulardan, dükkan sahibi bilgisi giriş yapan berbere eşit olanları süzüyoruz.
+        // Not: Eğer Shop entity'nde owner alanı yoksa, geçici test için bu filtreyi kaldırıp getAppointmentsByShop(1L) döndürebilirsin.
+        return appointmentRepository.findAll().stream()
+                .filter(app -> app.getShop().getOwner() != null && app.getShop().getOwner().getId().equals(userId))
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    //  6. Entity -> DTO Dönüşümünü yapan yardımcı metot (Manuel Mapping)
     private AppointmentDTO convertToDTO(Appointment appointment) {
         return new AppointmentDTO(
                 appointment.getId(),

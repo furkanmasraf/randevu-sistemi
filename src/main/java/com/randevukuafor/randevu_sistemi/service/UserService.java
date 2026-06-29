@@ -34,7 +34,7 @@ public class UserService {
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
         user.setEmail(request.getEmail());
-        user.setPhoneNumber(request.getPhone());
+        user.setPhoneNumber(request.getPhoneNumber());
 
         //Dünyanın en güvenli şifreleme algoritmalarından biri olan BCrypt ile hash'liyoruz
         user.setPassword(passwordEncoder.encode(request.getPassword()));
