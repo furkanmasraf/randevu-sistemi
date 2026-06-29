@@ -1,5 +1,6 @@
 package com.randevukuafor.randevu_sistemi.controller;
 
+import com.randevukuafor.randevu_sistemi.dto.ShopDTO;
 import com.randevukuafor.randevu_sistemi.model.Shop;
 import com.randevukuafor.randevu_sistemi.service.ShopService;
 import org.springframework.web.bind.annotation.*;
@@ -8,7 +9,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/shops")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174"})
 public class ShopController {
 
     private final ShopService shopService;
@@ -17,21 +18,20 @@ public class ShopController {
         this.shopService = shopService;
     }
 
-    // Dükkan Kayıt Etme (POST)
     @PostMapping("/register")
     public Shop registerShop(@RequestBody Shop shop) {
         return shopService.createShop(shop);
     }
 
-    // Tüm Dükkanları Listeleme (GET)
+    // Artık dış dünyaya Entity değil, güvenli DTO listesi dönüyor
     @GetMapping
-    public List<Shop> getAllShops() {
+    public List<ShopDTO> getAllShops() {
         return shopService.getAllShops();
     }
 
-    // Şehre göre filtreleme (GET) - Örn: /api/shops/filter?city=İstanbul
+    // Filtreleme uç noktası da DTO yapısına geçirildi
     @GetMapping("/filter")
-    public List<Shop> getShopsByCity(@RequestParam String city) {
+    public List<ShopDTO> getShopsByCity(@RequestParam String city) {
         return shopService.getShopsByCity(city);
     }
 }

@@ -1,12 +1,12 @@
 package com.randevukuafor.randevu_sistemi.service;
 
+import com.randevukuafor.randevu_sistemi.dto.ShopDTO;
 import com.randevukuafor.randevu_sistemi.model.Shop;
 import com.randevukuafor.randevu_sistemi.repository.ShopRepository;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class ShopService {
@@ -17,21 +17,37 @@ public class ShopService {
         this.shopRepository = shopRepository;
     }
 
-    // Yeni dükkan kaydetme
-    //@CacheEvict(value = "shops", allEntries = true)
     public Shop createShop(Shop shop) {
-        // İleride buraya "Bu kullanıcı gerçekten SHOP_OWNER mı?" gibi kurumsal kontroller ekleyebiliriz
         return shopRepository.save(shop);
     }
 
-    // Tüm dükkanları listeleme
-    //@Cacheable(value = "shops")
-    public List<Shop> getAllShops() {
-        return shopRepository.findAll();
+    // Dönüş tipi List<ShopDTO> olarak güncellendi
+    public List<ShopDTO> getAllShops() {
+        return shopRepository.findAll()
+                .stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
 
-    // Şehre göre dükkan getirme (Müşteriler arama yaparken kullanacak)
-    public List<Shop> getShopsByCity(String city) {
-        return shopRepository.findByCity(city);
+    // Dönüş tipi List<ShopDTO> olarak güncellendi
+    public List<ShopDTO> getShopsByCity(String city) {
+        return shopRepository.findByCity(city)
+                .stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    //  Entity -> DTO Dönüştürücü Yardımcı Metot (Mapper)
+    private ShopDTO convertToDTO(Shop shop) {
+        return new ShopDTO(
+                shop.getId(),
+                shop.getName(),
+                shop.getCity(),
+                shop.getDistrict(),
+                shop.getAddressText(),
+                shop.getLatitude(),
+                shop.getLongitude(),
+                shop.isSubscribed()
+        );
     }
 }
