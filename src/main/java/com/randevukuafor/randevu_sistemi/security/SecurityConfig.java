@@ -37,10 +37,10 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/shops/**").hasRole("BARBER")
-                        .requestMatchers(HttpMethod.DELETE, "/api/shops/**").hasRole("BARBER")
-                        .requestMatchers(HttpMethod.GET, "/api/shops/**").hasAnyRole("CUSTOMER", "BARBER")
-                        .requestMatchers("/api/appointments/**").hasAnyRole("CUSTOMER", "BARBER")
+                        .requestMatchers(HttpMethod.POST, "/api/shops/**").hasAuthority("SHOP_OWNER")
+                        .requestMatchers(HttpMethod.DELETE, "/api/shops/**").hasAuthority("SHOP_OWNER")
+                        .requestMatchers(HttpMethod.GET, "/api/shops/**").hasAnyAuthority("CUSTOMER", "SHOP_OWNER")
+                        .requestMatchers("/api/appointments/**").hasAnyAuthority("CUSTOMER", "SHOP_OWNER")
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
@@ -59,7 +59,6 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // Vite projenin ayağa kalktığı tüm olası portları desteklemesi için origin listesini geniş tutuyoruz
         configuration.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:5174"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Cache-Control"));
