@@ -9,7 +9,7 @@ import com.randevukuafor.randevu_sistemi.repository.UserRepository;
 import com.randevukuafor.randevu_sistemi.security.JwtService;
 import io.github.resilience4j.retry.annotation.Retry;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.authentication.BadCredentialsException; // Standart güvenlik hatası
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -30,7 +30,6 @@ public class AuthService {
 
     @Retry(name = "authRetry", fallbackMethod = "fallbackRegister")
     public String register(RegisterRequest request) {
-        // Eski RuntimeException yerine kendi yazdığım özel hatayı fırlatıyorum..
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
             throw new EmailAlreadyExistsException("Bu email adresi zaten kullanımda!");
         }
@@ -54,7 +53,6 @@ public class AuthService {
 
     // kullanıcı giriş metodu
     public Map<String, String> login(LoginRequest request) {
-        // Güvenlik gereği e-posta veya şifre yanlışsa hep aynı genel hatayı döneriz (Kötü niyetli taramaları önlemek için)
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new BadCredentialsException("E-posta veya şifre hatalı!"));
 
@@ -62,15 +60,14 @@ public class AuthService {
             throw new BadCredentialsException("E-posta veya şifre hatalı!");
         }
 
-        // DEFERDEKİ MADDEYİ ÇÖZÜYORUZ: Token içine claims (ekstra veri) hazırlığı
         Map<String, Object> extraClaims = new HashMap<>();
-        extraClaims.put("role", user.getRole().name()); // Token gövdesine rolleri (CUSTOMER/BARBER) yazdık
+        extraClaims.put("role", user.getRole().name());
 
-        // Düz metot yerine, hazırladığımız claims haritasını alan aşırı yüklenmiş (overloaded) metodu çağırıyoruz
         String token = jwtService.generateToken(extraClaims, user.getEmail());
 
         Map<String, String> response = new HashMap<>();
         response.put("token", token);
+        response.put("userId", String.valueOf(user.getId())); // Ön yüzün dinamik randevu alabilmesi için ID eklendi
         response.put("firstName", user.getFirstName());
         response.put("lastName", user.getLastName());
         response.put("role", user.getRole().name());
