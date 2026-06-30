@@ -6,6 +6,7 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Service;
 
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
 import java.util.HashMap;
@@ -15,36 +16,34 @@ import java.util.function.Function;
 @Service
 public class JwtService {
 
-    private final java.security.Key SECRET_KEY = io.jsonwebtoken.Jwts.SIG.HS256.key().build();
+    // En az 256-bit uzunluğunda, sabit ve güvenli bir anahtar kelime tanımlıyoruz
+    private static final String SECRET_STRING = "v9yA2X5pZ8rB1uD4fG7hJ0kM3nP6qS9tV2wY5zC8eR1tY4uI7oP0aS3dF6gH9jK2l";
+    private final Key SECRET_KEY = Keys.hmacShaKeyFor(SECRET_STRING.getBytes(StandardCharsets.UTF_8));
 
-    // 1. Token içinden kullanıcı adını (Email veya Username) çekme
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
     }
 
-    // 2. Token içinden herhangi bir bilgiyi (Claim) güvenli şekilde ayıklama
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
         final Claims claims = extractAllClaims(token);
         return claimsResolver.apply(claims);
     }
 
-    // 3. Sadece kullanıcı adı (Subject) ile hızlı token üretme
     public String generateToken(String username) {
         return generateToken(new HashMap<>(), username);
     }
 
-    // 4. Detaylı (Roller veya ekstra veriler içeren) Token üretme metodu (1 Günlük Süre)
+    @SuppressWarnings("deprecation")
     public String generateToken(Map<String, Object> extraClaims, String username) {
         return Jwts.builder()
                 .setClaims(extraClaims)
                 .setSubject(username)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24)) // 24 Saat geçerli
+                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24))
                 .signWith(SECRET_KEY, SignatureAlgorithm.HS256)
                 .compact();
     }
 
-    // 5. Token geçerli mi, kullanıcıya mı ait ve süresi dolmuş mu kontrolü
     public boolean isTokenValid(String token, String username) {
         final String extractedUsername = extractUsername(token);
         return (extractedUsername.equals(username)) && !isTokenExpired(token);
