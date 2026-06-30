@@ -9,6 +9,8 @@ public class ShopDTO {
     private double latitude;
     private double longitude;
     private boolean subscribed;
+    private String startTime;
+    private String endTime;
 
     // --- BOŞ VE PARAMETRELİ CONSTRUCTOR ---
     public ShopDTO() {}
@@ -49,4 +51,20 @@ public class ShopDTO {
 
     public boolean isSubscribed() { return subscribed; }
     public void setSubscribed(boolean subscribed) { this.subscribed = subscribed; }
+
+    public String getStartTime() {
+        return startTime;
+    }
+
+    public void setStartTime(String startTime) {
+        this.startTime = startTime;
+    }
+
+    public String getEndTime() {
+        return endTime;
+    }
+
+    public void setEndTime(String endTime) {
+        this.endTime = endTime;
+    }
 }

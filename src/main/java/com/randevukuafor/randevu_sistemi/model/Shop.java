@@ -1,7 +1,6 @@
 package com.randevukuafor.randevu_sistemi.model;
 
 import jakarta.persistence.*;
-
 import java.util.List;
 
 @Entity
@@ -20,11 +19,21 @@ public class Shop implements java.io.Serializable {
     private String district;
     private boolean subscribed;
 
+    // --- Yeni Eklenen Çalışma Saatleri Alanları ---
+    private String startTime = "09:00";
+    private String endTime = "20:00";
+
     @ManyToOne
     @JoinColumn(name = "owner_id")
     private User owner;
 
-    // --- GETTER VE SETTER METOTLARI (Garanti Yöntem) ---
+    @OneToMany(mappedBy = "shop", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Service> services;
+
+    @OneToMany(mappedBy = "shop", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Employee> employees;
+
+    // --- GETTER VE SETTER METOTLARI ---
 
     public Long getId() {
         return id;
@@ -98,9 +107,37 @@ public class Shop implements java.io.Serializable {
         this.owner = owner;
     }
 
-    @OneToMany(mappedBy = "shop", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Service> services;
+    // --- Çalışma Saatleri Getter / Setter Metotları ---
+    public String getStartTime() {
+        return startTime;
+    }
 
-    @OneToMany(mappedBy = "shop", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Employee> employees;
+    public void setStartTime(String startTime) {
+        this.startTime = startTime;
+    }
+
+    public String getEndTime() {
+        return endTime;
+    }
+
+    public void setEndTime(String endTime) {
+        this.endTime = endTime;
+    }
+
+    // --- Services ve Employees İçin Eksik Getter / Setter Metotları ---
+    public List<Service> getServices() {
+        return services;
+    }
+
+    public void setServices(List<Service> services) {
+        this.services = services;
+    }
+
+    public List<Employee> getEmployees() {
+        return employees;
+    }
+
+    public void setEmployees(List<Employee> employees) {
+        this.employees = employees;
+    }
 }
