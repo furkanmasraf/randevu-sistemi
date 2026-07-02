@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/shops")
@@ -76,22 +77,18 @@ public class ShopController {
     // --- YENİ EKLENEN OPERASYONEL ENDPOINT'LER ---
 
     // Sonsuz döngüyü (Infinite Recursion) engellemek için ShopDTO dönen güncel metot
-    @GetMapping("/owner/{ownerId}")
-    public ResponseEntity<ShopDTO> getShopByOwnerId(@PathVariable Long ownerId) {
-        Shop shop = shopRepository.findByOwnerId(ownerId)
-                .orElseThrow(() -> new RuntimeException("Bu kullanıcıya ait dükkan bulunamadı"));
+    @GetMapping("/owner/{userId}")
+    public ResponseEntity<?> getShopByOwner(@PathVariable Long userId) {
+        // 1. Dükkanı bulmaya çalış
+        Optional<Shop> shopOpt = shopRepository.findByOwnerId(userId);
 
-        // Entity verilerini temiz bir şekilde DTO'ya aktarıyoruz
-        ShopDTO shopDTO = new ShopDTO();
-        shopDTO.setId(shop.getId());
-        shopDTO.setName(shop.getName());
-        shopDTO.setCity(shop.getCity());
-        shopDTO.setDistrict(shop.getDistrict());
-        shopDTO.setAddressText(shop.getAddressText());
-        shopDTO.setStartTime(shop.getStartTime());
-        shopDTO.setEndTime(shop.getEndTime());
+        // 2. Eğer dükkan yoksa, 500 hatası yerine 404 dön ki frontend patlamasın
+        if (shopOpt.isEmpty()) {
+            System.out.println("DEBUG: Kullanıcı ID " + userId + " için dükkan bulunamadı!");
+            return ResponseEntity.status(404).body("Bu kullanıcıya ait dükkan bulunamadı.");
+        }
 
-        return ResponseEntity.ok(shopDTO);
+        return ResponseEntity.ok(shopOpt.get());
     }
 
     // Dükkanın Çalışma Saatlerini Güncelleme Endpoint'i

@@ -1,5 +1,6 @@
 package com.randevukuafor.randevu_sistemi.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 
@@ -22,6 +23,7 @@ public class Service implements java.io.Serializable {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "shop_id", nullable = false)
+    @JsonBackReference
     private Shop shop;
 
     // Boş Yapıcı Metot (Hibernate için Şart)
