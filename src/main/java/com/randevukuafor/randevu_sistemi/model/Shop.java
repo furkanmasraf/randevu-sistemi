@@ -1,5 +1,6 @@
 package com.randevukuafor.randevu_sistemi.model;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import java.util.List;
 
@@ -28,6 +29,7 @@ public class Shop implements java.io.Serializable {
     private User owner;
 
     @OneToMany(mappedBy = "shop", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
     private List<Service> services;
 
     @OneToMany(mappedBy = "shop", cascade = CascadeType.ALL, orphanRemoval = true)

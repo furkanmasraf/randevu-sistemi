@@ -15,16 +15,31 @@ public class ServiceController {
     private HairdresserService hairdresserService;
 
     // 1. Hizmet Oluşturma API'ı (POST http://localhost:8080/api/services)
-    @PostMapping
-    public ResponseEntity<Service> createService(@RequestBody Service service) {
-        Service savedService = hairdresserService.createService(service);
-        return ResponseEntity.ok(savedService);
+    @PostMapping("/shop/{shopId}")
+    public ResponseEntity<?> createService(@RequestBody Service service, @PathVariable Long shopId) {
+        try {
+            // Gelen veriyi konsola yazdıralım, gerçekten dolu geliyor mu görelim
+            System.out.println("Gelen Service verisi: " + service);
+            System.out.println("Gelen Shop ID: " + shopId);
+
+            Service savedService = hairdresserService.createService(service, shopId);
+            return ResponseEntity.ok(savedService);
+
+        } catch (Exception e) {
+            // Hatanın detaylı dökümünü IntelliJ konsolunda göreceğiz
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Hata: " + e.getMessage());
+        }
     }
 
     // 2. Belirli Bir Dükkanın Hizmetlerini Listeleme API'ı (GET http://localhost:8080/api/services/shop/{shopId})
     @GetMapping("/shop/{shopId}")
-    public ResponseEntity<List<Service>> getServicesByShop(@PathVariable Long shopId) {
-        List<Service> services = hairdresserService.getServicesByShop(shopId);
-        return ResponseEntity.ok(services);
+    public ResponseEntity<?> getServicesByShop(@PathVariable Long shopId) {
+        try {
+            return ResponseEntity.ok(hairdresserService.getServicesByShop(shopId));
+        } catch (Exception e) {
+            e.printStackTrace(); // Hatayı konsola tam detaylı yazdır
+            return ResponseEntity.status(500).body("Servisler alınamadı: " + e.getMessage());
+        }
     }
 }
