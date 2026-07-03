@@ -2,20 +2,22 @@ package com.randevukuafor.randevu_sistemi.controller;
 
 import com.randevukuafor.randevu_sistemi.dto.AppointmentDTO;
 import com.randevukuafor.randevu_sistemi.dto.CreateAppointmentRequest;
-import com.randevukuafor.randevu_sistemi.model.Employee;
-import com.randevukuafor.randevu_sistemi.model.Service;
-import com.randevukuafor.randevu_sistemi.repository.EmployeeRepository;
-import com.randevukuafor.randevu_sistemi.repository.ServiceRepository;
+import com.randevukuafor.randevu_sistemi.model.*;
+import com.randevukuafor.randevu_sistemi.repository.*;
 import com.randevukuafor.randevu_sistemi.service.AppointmentService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/appointments")
-@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174"}) // 🚀 React CORS engellerini aşmak için eklendi
+@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174"}) // React CORS engellerini aşmak için eklendi
 public class AppointmentController {
 
     @Autowired
@@ -27,11 +29,66 @@ public class AppointmentController {
     @Autowired
     private ServiceRepository serviceRepository;
 
+    @Autowired
+    private AppointmentRepository appointmentRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private ShopRepository shopRepository;
+
+    @GetMapping("/taken-slots")
+    public ResponseEntity<List<String>> getTakenSlots(
+            @RequestParam Long employeeId,
+            @RequestParam String date) {
+
+        LocalDate localDate = LocalDate.parse(date);
+        List<LocalDateTime> takenSlots = appointmentRepository.findTakenSlotsByEmployeeAndDate(employeeId, localDate);
+
+        // LocalDateTime listesini, saat formatında String listesine dönüştür
+        List<String> timeStrings = takenSlots.stream()
+                .map(dt -> dt.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm")))
+                .toList();
+
+        return ResponseEntity.ok(timeStrings);
+    }
+
     // Randevu Oluşturma
     @PostMapping
-    public ResponseEntity<AppointmentDTO> createAppointment(@Valid @RequestBody CreateAppointmentRequest request) {
-        AppointmentDTO savedAppointment = appointmentService.createAppointment(request);
-        return ResponseEntity.ok(savedAppointment);
+    public ResponseEntity<?> createAppointment(@RequestBody Map<String, Object> payload) {
+        try {
+            Long shopId = Long.valueOf(payload.get("shopId").toString());
+            Long employeeId = Long.valueOf(payload.get("employeeId").toString());
+            Long serviceId = Long.valueOf(payload.get("serviceId").toString());
+            Long userId = Long.valueOf(payload.get("userId").toString());
+
+            // LocalDateTime.parse için ISO formatı (yyyy-MM-dd'T'HH:mm:ss)
+            String timeStr = payload.get("appointmentTime").toString();
+            LocalDateTime appointmentTime = LocalDateTime.parse(timeStr);
+
+            // İlgili nesneleri bul
+            User user = userRepository.findById(userId).orElseThrow();
+            Shop shop = shopRepository.findById(shopId).orElseThrow();
+            Employee employee = employeeRepository.findById(employeeId).orElseThrow();
+            Service service = serviceRepository.findById(serviceId).orElseThrow();
+
+            // Randevu nesnesini oluştur
+            Appointment appointment = new Appointment();
+            appointment.setUser(user);
+            appointment.setShop(shop);
+            appointment.setEmployee(employee);
+            appointment.setService(service);
+            appointment.setAppointmentTime(appointmentTime);
+            appointment.setStatus("PENDING");
+
+            appointmentRepository.save(appointment);
+
+            return ResponseEntity.ok(Map.of("message", "Randevunuz başarıyla oluşturuldu!"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(400).body(Map.of("message", "Randevu alınamadı: " + e.getMessage()));
+        }
     }
 
     // Müşterinin kendi randevularını çekebilmesi için eklenen endpoint
@@ -81,5 +138,15 @@ public class AppointmentController {
     @GetMapping("/shop/{shopId}/services")
     public ResponseEntity<List<Service>> getShopServices(@PathVariable Long shopId) {
         return ResponseEntity.ok(serviceRepository.findByShopId(shopId));
+    }
+
+    @PatchMapping("/{id}/status")
+    @CrossOrigin(origins = "http://localhost:5173")
+    public ResponseEntity<?> updateAppointmentStatus(@PathVariable Long id, @RequestBody Map<String, String> statusMap) {
+        String status = statusMap.get("status");
+        Appointment appointment = appointmentRepository.findById(id).orElseThrow();
+        appointment.setStatus(status);
+        appointmentRepository.save(appointment);
+        return ResponseEntity.ok(Map.of("message", "Durum güncellendi"));
     }
 }
