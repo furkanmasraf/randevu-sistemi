@@ -1,9 +1,12 @@
 package com.randevukuafor.randevu_sistemi.model;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
+import lombok.ToString;
 
 @Entity
 @Table(name = "employees")
+@ToString(exclude = "shop")
 public class Employee {
 
     @Id
@@ -18,6 +21,7 @@ public class Employee {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "shop_id", nullable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private Shop shop;
 
     // 1. Boş Yapıcı Metot (Hibernate ve Jackson dönüşümleri için ŞART)
