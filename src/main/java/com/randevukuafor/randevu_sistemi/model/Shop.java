@@ -2,10 +2,17 @@ package com.randevukuafor.randevu_sistemi.model;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+
 import java.util.List;
 
 @Entity
 @Table(name = "shops")
+@Getter
+@Setter
+@ToString(exclude = {"employees", "services"})
 public class Shop implements java.io.Serializable {
 
     @Id
@@ -29,10 +36,11 @@ public class Shop implements java.io.Serializable {
     private User owner;
 
     @OneToMany(mappedBy = "shop", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonManagedReference
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private List<Service> services;
 
     @OneToMany(mappedBy = "shop", cascade = CascadeType.ALL, orphanRemoval = true)
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private List<Employee> employees;
 
     // --- GETTER VE SETTER METOTLARI ---

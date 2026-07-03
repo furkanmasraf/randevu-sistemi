@@ -2,10 +2,13 @@ package com.randevukuafor.randevu_sistemi.model;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
+import lombok.ToString;
+
 import java.math.BigDecimal;
 
 @Entity
 @Table(name = "services")
+@ToString(exclude = "shop")
 public class Service implements java.io.Serializable {
 
     @Id
@@ -23,7 +26,7 @@ public class Service implements java.io.Serializable {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "shop_id", nullable = false)
-    @JsonBackReference
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private Shop shop;
 
     // Boş Yapıcı Metot (Hibernate için Şart)

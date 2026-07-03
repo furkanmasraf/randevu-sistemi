@@ -79,16 +79,26 @@ public class ShopController {
     // Sonsuz döngüyü (Infinite Recursion) engellemek için ShopDTO dönen güncel metot
     @GetMapping("/owner/{userId}")
     public ResponseEntity<?> getShopByOwner(@PathVariable Long userId) {
-        // 1. Dükkanı bulmaya çalış
         Optional<Shop> shopOpt = shopRepository.findByOwnerId(userId);
 
-        // 2. Eğer dükkan yoksa, 500 hatası yerine 404 dön ki frontend patlamasın
         if (shopOpt.isEmpty()) {
-            System.out.println("DEBUG: Kullanıcı ID " + userId + " için dükkan bulunamadı!");
-            return ResponseEntity.status(404).body("Bu kullanıcıya ait dükkan bulunamadı.");
+            return ResponseEntity.status(404).body("Dükkan bulunamadı.");
         }
 
-        return ResponseEntity.ok(shopOpt.get());
+        Shop shop = shopOpt.get();
+
+        // DTO'ya dönüştür (Döngüden kurtulmak için)
+        ShopDTO dto = new ShopDTO();
+        dto.setId(shop.getId());
+        dto.setName(shop.getName());
+        dto.setAddressText(shop.getAddressText());
+        dto.setCity(shop.getCity());
+        dto.setDistrict(shop.getDistrict());
+        dto.setStartTime(shop.getStartTime());
+        dto.setEndTime(shop.getEndTime());
+        // DTO'da employees veya services listesi yok, bu yüzden döngüye girmez!
+
+        return ResponseEntity.ok(dto);
     }
 
     // Dükkanın Çalışma Saatlerini Güncelleme Endpoint'i
@@ -109,23 +119,19 @@ public class ShopController {
 
     // --- CRITICAL UPDATE: Ön yüzün eklenen hizmeti anında Proxy sarmalı olmadan okuyabilmesi sağlandı ---
     @PostMapping("/{shopId}/services")
-    public ResponseEntity<Map<String, Object>> addServiceToShop(
-            @PathVariable Long shopId,
-            @RequestBody Service service) {
-
+    public ResponseEntity<?> addServiceToShop(@PathVariable Long shopId, @RequestBody Service service) {
+        // 1. Shop'u bul
         Shop shop = shopRepository.findById(shopId)
                 .orElseThrow(() -> new RuntimeException("Dükkan bulunamadı"));
 
+        // 2. Service nesnesini temizle ve ilişkiyi kur
         service.setShop(shop);
+
+        // 3. Kaydet
         Service savedService = serviceRepository.save(service);
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("id", savedService.getId());
-        response.put("name", savedService.getName());
-        response.put("price", savedService.getPrice());
-        response.put("durationInMinutes", savedService.getDurationInMinutes());
-
-        return ResponseEntity.ok(response);
+        // 4. Sadece basit bir başarı mesajı veya DTO dön (Entity'nin kendisini DÖNME!)
+        return ResponseEntity.ok(Map.of("message", "Hizmet başarıyla eklendi", "id", savedService.getId()));
     }
 
     // Hizmet Silme Endpoint'i
