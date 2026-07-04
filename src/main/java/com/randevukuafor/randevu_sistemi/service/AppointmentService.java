@@ -35,6 +35,33 @@ public class AppointmentService {
     @Autowired
     private WorkingHoursRepository workingHoursRepository;
 
+    //Geçmiş Bugün Gelecek Filtreleme!!
+    public List<AppointmentDTO> getFilteredAppointments(Long shopId, String filter) {
+        List<Appointment> all = appointmentRepository.findByShopId(shopId);
+        LocalDateTime now = LocalDateTime.now();
+
+        return all.stream()
+                .filter(a -> {
+                    if (filter.equals("past")) return a.getAppointmentTime().isBefore(now);
+                    if (filter.equals("today")) return a.getAppointmentTime().toLocalDate().isEqual(now.toLocalDate());
+                    if (filter.equals("future")) return a.getAppointmentTime().isAfter(now);
+                    return true;
+                })
+                .map(appointment -> {
+                    return new AppointmentDTO(
+                            appointment.getId(),
+                            appointment.getUser().getFirstName() + " " + appointment.getUser().getLastName(),
+                            appointment.getShop().getName(),
+                            appointment.getEmployee().getFirstName() + " " + appointment.getEmployee().getLastName(),
+                            appointment.getService().getName(),
+                            appointment.getService().getPrice(),
+                            appointment.getAppointmentTime(),
+                            appointment.getStatus()
+                    );
+                })
+                .toList();
+    }
+
     // 1. Randevu Kaydetme İş Mantığı
     public AppointmentDTO createAppointment(CreateAppointmentRequest request) {
 

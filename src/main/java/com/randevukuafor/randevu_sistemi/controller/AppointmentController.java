@@ -91,6 +91,14 @@ public class AppointmentController {
         }
     }
 
+    @GetMapping("/shop/{shopId}/filter")
+    public ResponseEntity<List<AppointmentDTO>> getFilteredAppointments(
+            @PathVariable Long shopId,
+            @RequestParam String filter) {
+
+        return ResponseEntity.ok(appointmentService.getFilteredAppointments(shopId, filter));
+    }
+
     // Müşterinin kendi randevularını çekebilmesi için eklenen endpoint
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<AppointmentDTO>> getAppointmentsByUser(@PathVariable Long userId) {
