@@ -11,12 +11,14 @@ public class ShopDTO {
     private boolean subscribed;
     private String startTime;
     private String endTime;
+    private String phoneNumber;
+    private String imageUrl;
 
     // --- BOŞ VE PARAMETRELİ CONSTRUCTOR ---
     public ShopDTO() {}
 
     public ShopDTO(Long id, String name, String city, String district, String addressText,
-                   double latitude, double longitude, boolean subscribed) {
+                   double latitude, double longitude, boolean subscribed, String phoneNumber, String imageUrl) {
         this.id = id;
         this.name = name;
         this.city = city;
@@ -25,6 +27,8 @@ public class ShopDTO {
         this.latitude = latitude;
         this.longitude = longitude;
         this.subscribed = subscribed;
+        this.phoneNumber = phoneNumber;
+        this.imageUrl = imageUrl;
     }
 
     // --- GETTER VE SETTER METOTLARI ---
@@ -51,6 +55,12 @@ public class ShopDTO {
 
     public boolean isSubscribed() { return subscribed; }
     public void setSubscribed(boolean subscribed) { this.subscribed = subscribed; }
+
+    public String getPhoneNumber() { return phoneNumber; }
+    public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
+
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
 
     public String getStartTime() {
         return startTime;

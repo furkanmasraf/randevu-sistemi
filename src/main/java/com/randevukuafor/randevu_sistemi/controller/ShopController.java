@@ -8,13 +8,17 @@ import com.randevukuafor.randevu_sistemi.repository.EmployeeRepository;
 import com.randevukuafor.randevu_sistemi.repository.ServiceRepository;
 import com.randevukuafor.randevu_sistemi.service.ShopService;
 import com.randevukuafor.randevu_sistemi.repository.ShopRepository; // Dükkan kayıt işlemleri için eklendi
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Optional;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/shops")
@@ -96,7 +100,6 @@ public class ShopController {
         dto.setDistrict(shop.getDistrict());
         dto.setStartTime(shop.getStartTime());
         dto.setEndTime(shop.getEndTime());
-        // DTO'da employees veya services listesi yok, bu yüzden döngüye girmez!
 
         return ResponseEntity.ok(dto);
     }
@@ -142,5 +145,45 @@ public class ShopController {
 
         serviceRepository.delete(service);
         return ResponseEntity.ok(Map.of("message", "Hizmet başarıyla silindi"));
+    }
+
+    // işletme detayları..
+    @GetMapping("/{shopId}/details")
+    public ResponseEntity<ShopDTO> getShopDetails(@PathVariable Long shopId) {
+        return ResponseEntity.ok(shopService.getShopById(shopId));
+    }
+
+    @PutMapping(value = "/{shopId}/update-with-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ShopDTO> updateShopWithImage(
+            @PathVariable Long shopId,
+            @RequestParam(value = "file", required = false) MultipartFile file,
+            @RequestParam("shopName") String shopName,
+            @RequestParam("phoneNumber") String phoneNumber) throws IOException {
+
+        Shop shop = shopRepository.findById(shopId).orElseThrow();
+
+        // 1. KLASÖR KONTROLÜ VE OLUŞTURMA (Eksik olan kısım burası!)
+        String uploadDir = "uploads";
+        java.io.File directory = new java.io.File(uploadDir);
+        if (!directory.exists()) {
+            directory.mkdirs();
+        }
+
+        if (file != null && !file.isEmpty()) {
+            // 2. Dosyayı kaydet
+            String fileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
+            Path path = Paths.get(uploadDir + java.io.File.separator + fileName);
+            Files.copy(file.getInputStream(), path, StandardCopyOption.REPLACE_EXISTING);
+
+            // 3. Veritabanına kaydet (Ön yüzün doğrudan erişebileceği URL formatı)
+            shop.setImageUrl("/uploads/" + fileName);
+        }
+
+        shop.setName(shopName);
+        shop.setPhoneNumber(phoneNumber);
+        shopRepository.save(shop);
+
+        // Dönüşte DTO kullandığın için shopService'in bunu desteklediğinden emin ol
+        return ResponseEntity.ok(shopService.convertToDTO(shop));
     }
 }
