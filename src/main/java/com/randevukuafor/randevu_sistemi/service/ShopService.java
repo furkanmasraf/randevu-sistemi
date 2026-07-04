@@ -37,8 +37,14 @@ public class ShopService {
                 .collect(Collectors.toList());
     }
 
+    public ShopDTO getShopById(Long shopId) {
+        Shop shop = shopRepository.findById(shopId)
+                .orElseThrow(() -> new RuntimeException("Dükkan bulunamadı!"));
+        return convertToDTO(shop);
+    }
+
     //  Entity -> DTO Dönüştürücü Yardımcı Metot (Mapper)
-    private ShopDTO convertToDTO(Shop shop) {
+    public ShopDTO convertToDTO(Shop shop) {
         return new ShopDTO(
                 shop.getId(),
                 shop.getName(),
@@ -47,7 +53,9 @@ public class ShopService {
                 shop.getAddressText(),
                 shop.getLatitude(),
                 shop.getLongitude(),
-                shop.isSubscribed()
+                shop.isSubscribed(),
+                shop.getPhoneNumber(),
+                shop.getImageUrl()
         );
     }
 }

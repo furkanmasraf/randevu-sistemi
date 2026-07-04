@@ -20,12 +20,14 @@ public class Shop implements java.io.Serializable {
     private Long id;
 
     private String name;
-    private double latitude;
-    private double longitude;
+    private Double latitude;
+    private Double longitude;
     private String addressText;
     private String city;
     private String district;
     private boolean subscribed;
+    private String phoneNumber;
+    private String imageUrl;
 
     // --- Yeni Eklenen Çalışma Saatleri Alanları ---
     private String startTime = "09:00";
@@ -48,7 +50,6 @@ public class Shop implements java.io.Serializable {
     public Long getId() {
         return id;
     }
-
     public void setId(Long id) {
         this.id = id;
     }
@@ -56,7 +57,6 @@ public class Shop implements java.io.Serializable {
     public String getName() {
         return name;
     }
-
     public void setName(String name) {
         this.name = name;
     }
@@ -64,7 +64,6 @@ public class Shop implements java.io.Serializable {
     public double getLatitude() {
         return latitude;
     }
-
     public void setLatitude(double latitude) {
         this.latitude = latitude;
     }
@@ -72,7 +71,6 @@ public class Shop implements java.io.Serializable {
     public double getLongitude() {
         return longitude;
     }
-
     public void setLongitude(double longitude) {
         this.longitude = longitude;
     }
@@ -80,7 +78,6 @@ public class Shop implements java.io.Serializable {
     public String getAddressText() {
         return addressText;
     }
-
     public void setAddressText(String addressText) {
         this.addressText = addressText;
     }
@@ -88,7 +85,6 @@ public class Shop implements java.io.Serializable {
     public String getCity() {
         return city;
     }
-
     public void setCity(String city) {
         this.city = city;
     }
@@ -96,7 +92,6 @@ public class Shop implements java.io.Serializable {
     public String getDistrict() {
         return district;
     }
-
     public void setDistrict(String district) {
         this.district = district;
     }
@@ -104,7 +99,6 @@ public class Shop implements java.io.Serializable {
     public boolean isSubscribed() {
         return subscribed;
     }
-
     public void setSubscribed(boolean subscribed) {
         this.subscribed = subscribed;
     }
@@ -112,7 +106,6 @@ public class Shop implements java.io.Serializable {
     public User getOwner() {
         return owner;
     }
-
     public void setOwner(User owner) {
         this.owner = owner;
     }
@@ -121,7 +114,6 @@ public class Shop implements java.io.Serializable {
     public String getStartTime() {
         return startTime;
     }
-
     public void setStartTime(String startTime) {
         this.startTime = startTime;
     }
@@ -129,16 +121,13 @@ public class Shop implements java.io.Serializable {
     public String getEndTime() {
         return endTime;
     }
-
     public void setEndTime(String endTime) {
         this.endTime = endTime;
     }
 
-    // --- Services ve Employees İçin Eksik Getter / Setter Metotları ---
     public List<Service> getServices() {
         return services;
     }
-
     public void setServices(List<Service> services) {
         this.services = services;
     }
@@ -146,8 +135,13 @@ public class Shop implements java.io.Serializable {
     public List<Employee> getEmployees() {
         return employees;
     }
-
     public void setEmployees(List<Employee> employees) {
         this.employees = employees;
     }
+
+    public String getPhoneNumber() { return phoneNumber; }
+    public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
+
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
 }
