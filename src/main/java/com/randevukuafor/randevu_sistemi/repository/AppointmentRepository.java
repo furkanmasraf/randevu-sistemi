@@ -1,7 +1,7 @@
 package com.randevukuafor.randevu_sistemi.repository;
 
 import com.randevukuafor.randevu_sistemi.model.Appointment;
-import io.lettuce.core.dynamic.annotation.Param;
+import org.springframework.data.repository.query.Param;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -13,6 +13,9 @@ import java.util.Optional;
 
 @Repository
 public interface AppointmentRepository extends JpaRepository<Appointment, Long> {
+
+    @Query("SELECT a FROM Appointment a WHERE a.employee.id = :employeeId AND FUNCTION('DATE', a.appointmentTime) = :date")
+    List<Appointment> findByEmployeeIdAndDate(@Param("employeeId") Long employeeId, @Param("date") LocalDate date);
 
     @Query("SELECT a.appointmentTime FROM Appointment a WHERE a.employee.id = :empId AND FUNCTION('DATE', a.appointmentTime) = :date")
     List<LocalDateTime> findTakenSlotsByEmployeeAndDate(@Param("empId") Long empId, @Param("date") LocalDate date);

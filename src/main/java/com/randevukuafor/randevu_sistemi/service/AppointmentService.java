@@ -8,6 +8,7 @@ import com.randevukuafor.randevu_sistemi.exception.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
@@ -34,6 +35,16 @@ public class AppointmentService {
 
     @Autowired
     private WorkingHoursRepository workingHoursRepository;
+
+    public List<String> getBusySlotsForEmployee(Long employeeId, LocalDate date) {
+        // Repository'de tanımladığımız metodu çağırıyoruz
+        List<LocalDateTime> busyTimes = appointmentRepository.findTakenSlotsByEmployeeAndDate(employeeId, date);
+
+        // Sadece saat bilgisini (HH:mm) döndürüyoruz
+        return busyTimes.stream()
+                .map(dt -> dt.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm")))
+                .collect(Collectors.toList());
+    }
 
     //Geçmiş Bugün Gelecek Filtreleme!!
     public List<AppointmentDTO> getFilteredAppointments(Long shopId, String filter) {

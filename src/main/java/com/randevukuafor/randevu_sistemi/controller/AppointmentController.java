@@ -38,6 +38,15 @@ public class AppointmentController {
     @Autowired
     private ShopRepository shopRepository;
 
+    @GetMapping("/shop/employee-schedule")
+    public ResponseEntity<List<String>> getEmployeeSchedule(
+            @RequestParam Long employeeId,
+            @RequestParam String date) { // Örnek format: "2026-07-05"
+
+        LocalDate localDate = LocalDate.parse(date);
+        return ResponseEntity.ok(appointmentService.getBusySlotsForEmployee(employeeId, localDate));
+    }
+
     @GetMapping("/taken-slots")
     public ResponseEntity<List<String>> getTakenSlots(
             @RequestParam Long employeeId,
