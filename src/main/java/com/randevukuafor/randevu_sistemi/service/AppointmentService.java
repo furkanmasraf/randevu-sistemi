@@ -67,7 +67,8 @@ public class AppointmentService {
                             appointment.getService().getName(),
                             appointment.getService().getPrice(),
                             appointment.getAppointmentTime(),
-                            appointment.getStatus()
+                            appointment.getStatus(),
+                            appointment.getUser().getPhoneNumber()
                     );
                 })
                 .toList();
@@ -189,7 +190,8 @@ public class AppointmentService {
                 appointment.getService().getName(),
                 appointment.getService().getPrice(),
                 appointment.getAppointmentTime(),
-                appointment.getStatus()
+                appointment.getStatus(),
+                appointment.getUser().getPhoneNumber()
         );
     }
 }
