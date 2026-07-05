@@ -1,6 +1,7 @@
 package com.randevukuafor.randevu_sistemi.controller;
 
 import com.randevukuafor.randevu_sistemi.model.Service;
+import com.randevukuafor.randevu_sistemi.repository.ServiceRepository;
 import com.randevukuafor.randevu_sistemi.service.HairdresserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +18,9 @@ public class ServiceController {
 
     @Autowired
     private HairdresserService hairdresserService;
+
+    @Autowired
+    private ServiceRepository serviceRepository;
 
     // 1. Hizmet Oluşturma API'ı (POST http://localhost:8080/api/services)
     @PostMapping("/shop/{shopId}")
@@ -43,5 +47,15 @@ public class ServiceController {
         }).collect(Collectors.toList());
 
         return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteService(@PathVariable Long id) {
+        try {
+            serviceRepository.deleteById(id);
+            return ResponseEntity.ok("Hizmet başarıyla silindi.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Hizmet silinemedi.");
+        }
     }
 }

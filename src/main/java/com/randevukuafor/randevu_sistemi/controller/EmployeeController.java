@@ -52,4 +52,14 @@ public class EmployeeController {
     public ResponseEntity<List<Employee>> getEmployeesByShop(@PathVariable Long shopId) {
         return ResponseEntity.ok(employeeService.getEmployeesByShop(shopId));
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteEmployee(@PathVariable Long id) {
+        try {
+            employeeRepository.deleteById(id);
+            return ResponseEntity.ok("Personel başarıyla silindi.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Personel silinemedi.");
+        }
+    }
 }
