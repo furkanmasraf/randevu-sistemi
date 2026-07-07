@@ -2,7 +2,6 @@ package com.randevukuafor.randevu_sistemi.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -20,7 +19,6 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
-import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -41,23 +39,24 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll() // Sadece auth yollarına izin ver
+                        .requestMatchers("/api/auth/**").permitAll()
                         .anyRequest().authenticated()
                 )
-                .authenticationProvider(authenticationProvider()) // Provider'ı buraya ekle
+                .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 
-    // Şifre kontrolünü ve kullanıcı yüklemeyi bağlayan köprü
     @Bean
     public AuthenticationProvider authenticationProvider() {
-        // 1. UserDetailsService'i constructor'a vererek Provider'ı oluşturuyoruz...
+        // 1. Önce Provider'ı oluştur
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider(userDetailsService);
 
-        // 2. PasswordEncoder'ı setter ile set et (Bu metod sınıfta mevcut)
+        // 2. Kendi Encoder'ını set et
         authProvider.setPasswordEncoder(passwordEncoder());
 
+        // 3. (ÖNEMLİ) Eğer hala sorun yaşıyorsan, şu satırı ekleyerek
+        // Spring'in şifreyi nasıl hashlediğini loglamasını sağla:
         return authProvider;
     }
 
@@ -68,7 +67,6 @@ public class SecurityConfig {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        // Sadece BCrypt değil, strength değerini de netleştirelim
         return new BCryptPasswordEncoder(10);
     }
 
