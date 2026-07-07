@@ -25,7 +25,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         // Spring Security'nin tanıdığı formata dönüştür
         return org.springframework.security.core.userdetails.User.builder()
                 .username(user.getEmail())
-                .password(user.getPassword())
+                .password("{bcrypt}" + user.getPassword()) //Bu şifre artık düz metin değil, BCrypt ile hashlenmiş bir şifredir, bunu passwordEncoder ile tekrar hash'lemeye çalışma, doğrudan karşılaştır
                 .roles(user.getRole().name())
                 .build();
     }

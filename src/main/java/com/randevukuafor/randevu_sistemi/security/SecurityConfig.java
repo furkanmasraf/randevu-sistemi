@@ -68,7 +68,8 @@ public class SecurityConfig {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+        // Sadece BCrypt değil, strength değerini de netleştirelim
+        return new BCryptPasswordEncoder(10);
     }
 
     @Bean
