@@ -53,7 +53,7 @@ public class SecurityConfig {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider(userDetailsService);
 
         // 2. Kendi Encoder'ını set et
-        authProvider.setPasswordEncoder(passwordEncoder());
+        authProvider.setPasswordEncoder(this.passwordEncoder());
 
         // 3. (ÖNEMLİ) Eğer hala sorun yaşıyorsan, şu satırı ekleyerek
         // Spring'in şifreyi nasıl hashlediğini loglamasını sağla:
@@ -66,7 +66,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    public PasswordEncoder passwordEncoder() {
+    public static PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder(10);
     }
 

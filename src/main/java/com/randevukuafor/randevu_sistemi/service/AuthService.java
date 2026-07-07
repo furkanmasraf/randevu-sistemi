@@ -9,7 +9,9 @@ import com.randevukuafor.randevu_sistemi.repository.UserRepository;
 import com.randevukuafor.randevu_sistemi.security.JwtService;
 import io.github.resilience4j.retry.annotation.Retry;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -27,6 +29,9 @@ public class AuthService {
 
     @Autowired
     private JwtService jwtService;
+
+    @Autowired
+    private AuthenticationManager authenticationManager;
 
     // Kayıt Olma Metodu (Dinamik Rol Destekli)
     @Retry(name = "authRetry", fallbackMethod = "fallbackRegister")
@@ -61,13 +66,20 @@ public class AuthService {
 
     // Kullanıcı Giriş Metodu
     public Map<String, String> login(LoginRequest request) {
+        // 1. Spring Security'nin kendi doğrulama mekanizmasını tetikle
+        // Bu satır senin SecurityConfig'deki Provider'ını ve PasswordEncoder'ını kullanır
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        request.getEmail(),
+                        request.getPassword()
+                )
+        );
+
+        // 2. Kullanıcıyı getir
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new BadCredentialsException("E-posta veya şifre hatalı!"));
 
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new BadCredentialsException("E-posta veya şifre hatalı!");
-        }
-
+        // 3. Token oluştur
         Map<String, Object> extraClaims = new HashMap<>();
         extraClaims.put("role", user.getRole().name());
 
@@ -75,7 +87,7 @@ public class AuthService {
 
         Map<String, String> response = new HashMap<>();
         response.put("token", token);
-        response.put("userId", String.valueOf(user.getId())); // Ön yüzün dinamik randevu alabilmesi için ID eklendi
+        response.put("userId", String.valueOf(user.getId()));
         response.put("firstName", user.getFirstName());
         response.put("lastName", user.getLastName());
         response.put("role", user.getRole().name());
