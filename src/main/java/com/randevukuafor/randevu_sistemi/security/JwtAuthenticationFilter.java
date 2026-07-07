@@ -30,47 +30,47 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            FilterChain filterChain
-    ) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
 
-        if (HttpMethod.OPTIONS.name().equalsIgnoreCase(request.getMethod())) {
-            response.setStatus(HttpServletResponse.SC_OK);
+        // 1. Herkese açık yolları kontrol et
+        String path = request.getRequestURI();
+        if (path.startsWith("/auth/") || path.startsWith("/api/auth/")) {
+            filterChain.doFilter(request, response);
             return;
         }
 
+        // 2. authHeader değişkenini metot seviyesinde tanımladık
         final String authHeader = request.getHeader("Authorization");
-        final String jwt;
-        final String userEmail;
 
+        // 3. Token kontrolü
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        jwt = authHeader.substring(7);
-        userEmail = jwtService.extractUsername(jwt);
+        // 4. try-catch ile güvenli hale getirdik
+        try {
+            final String jwt = authHeader.substring(7);
+            final String userEmail = jwtService.extractUsername(jwt);
 
-        if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                User user = userRepository.findByEmail(userEmail)
+                        .orElseThrow(() -> new ResourceNotFoundException("Kullanıcı bulunamadı"));
 
-            User user = userRepository.findByEmail(userEmail)
-                    .orElseThrow(() -> new ResourceNotFoundException("Kullanıcı bulunamadı"));
-
-            if (jwtService.isTokenValid(jwt, user.getEmail())) {
-
-                SimpleGrantedAuthority authority = new SimpleGrantedAuthority(user.getRole().name());
-
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        user,
-                        null,
-                        List.of(authority)
-                );
-
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+                if (jwtService.isTokenValid(jwt, user.getEmail())) {
+                    SimpleGrantedAuthority authority = new SimpleGrantedAuthority(user.getRole().name());
+                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                            user, null, List.of(authority)
+                    );
+                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                }
             }
+        } catch (Exception e) {
+            // Hata olsa bile zinciri devam ettiriyoruz
+            e.printStackTrace();
+            System.out.println("JWT doğrulama hatası: " + e.getMessage());
         }
 
         filterChain.doFilter(request, response);

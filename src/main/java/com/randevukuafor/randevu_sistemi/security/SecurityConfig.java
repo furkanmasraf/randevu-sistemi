@@ -32,32 +32,11 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Sadece aşağıdakini kullan
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/api/auth/**").permitAll()
-
-                        // --- DÜKKAN VE HİZMET YÖNETİMİ İZİNLERİ ---
-                        // SHOP_OWNER için dükkan/hizmet ekleme, güncelleme (PUT) ve silme izinleri tanımlandı
-                        .requestMatchers(HttpMethod.POST, "/api/shops/**").hasAuthority("SHOP_OWNER")
-                        .requestMatchers(HttpMethod.PUT, "/api/shops/**").hasAuthority("SHOP_OWNER")
-                        .requestMatchers(HttpMethod.DELETE, "/api/shops/**").hasAuthority("SHOP_OWNER")
-
-                        // Herkes dükkanları listeleyebilsin/görebilsin
-                        .requestMatchers(HttpMethod.GET, "/api/shops/**").hasAnyAuthority("CUSTOMER", "SHOP_OWNER")
-
-                        // --- RANDEVU İZİNLERİ ---
-                        .requestMatchers("/api/appointments/taken-slots/**").permitAll()
-                        .requestMatchers("/api/appointments/**").hasAnyAuthority("CUSTOMER", "SHOP_OWNER")
-
-                        .anyRequest().authenticated()
-                )
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
-
+                        .anyRequest().permitAll()
+                );
         return http.build();
     }
 
