@@ -20,8 +20,6 @@ public class Shop implements java.io.Serializable {
     private Long id;
 
     private String name;
-    private Double latitude;
-    private Double longitude;
     private String addressText;
     private String city;
     private String district;
@@ -61,19 +59,6 @@ public class Shop implements java.io.Serializable {
         this.name = name;
     }
 
-    public double getLatitude() {
-        return latitude;
-    }
-    public void setLatitude(double latitude) {
-        this.latitude = latitude;
-    }
-
-    public double getLongitude() {
-        return longitude;
-    }
-    public void setLongitude(double longitude) {
-        this.longitude = longitude;
-    }
 
     public String getAddressText() {
         return addressText;

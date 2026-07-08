@@ -51,8 +51,6 @@ public class ShopService {
                 shop.getCity(),
                 shop.getDistrict(),
                 shop.getAddressText(),
-                shop.getLatitude(),
-                shop.getLongitude(),
                 shop.isSubscribed(),
                 shop.getPhoneNumber(),
                 shop.getImageUrl()

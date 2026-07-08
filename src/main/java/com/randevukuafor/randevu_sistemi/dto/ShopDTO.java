@@ -6,8 +6,6 @@ public class ShopDTO {
     private String city;
     private String district;
     private String addressText;
-    private double latitude;
-    private double longitude;
     private boolean subscribed;
     private String startTime;
     private String endTime;
@@ -17,15 +15,12 @@ public class ShopDTO {
     // --- BOŞ VE PARAMETRELİ CONSTRUCTOR ---
     public ShopDTO() {}
 
-    public ShopDTO(Long id, String name, String city, String district, String addressText,
-                   double latitude, double longitude, boolean subscribed, String phoneNumber, String imageUrl) {
+    public ShopDTO(Long id, String name, String city, String district, String addressText, boolean subscribed, String phoneNumber, String imageUrl) {
         this.id = id;
         this.name = name;
         this.city = city;
         this.district = district;
         this.addressText = addressText;
-        this.latitude = latitude;
-        this.longitude = longitude;
         this.subscribed = subscribed;
         this.phoneNumber = phoneNumber;
         this.imageUrl = imageUrl;
@@ -47,11 +42,6 @@ public class ShopDTO {
     public String getAddressText() { return addressText; }
     public void setAddressText(String addressText) { this.addressText = addressText; }
 
-    public double getLatitude() { return latitude; }
-    public void setLatitude(double latitude) { this.latitude = latitude; }
-
-    public double getLongitude() { return longitude; }
-    public void setLongitude(double longitude) { this.longitude = longitude; }
 
     public boolean isSubscribed() { return subscribed; }
     public void setSubscribed(boolean subscribed) { this.subscribed = subscribed; }
