@@ -4,8 +4,10 @@ import com.randevukuafor.randevu_sistemi.dto.ShopDTO;
 import com.randevukuafor.randevu_sistemi.model.Employee;
 import com.randevukuafor.randevu_sistemi.model.Service;
 import com.randevukuafor.randevu_sistemi.model.Shop;
+import com.randevukuafor.randevu_sistemi.model.User;
 import com.randevukuafor.randevu_sistemi.repository.EmployeeRepository;
 import com.randevukuafor.randevu_sistemi.repository.ServiceRepository;
+import com.randevukuafor.randevu_sistemi.repository.UserRepository;
 import com.randevukuafor.randevu_sistemi.service.ShopService;
 import com.randevukuafor.randevu_sistemi.repository.ShopRepository; // Dükkan kayıt işlemleri için eklendi
 import org.springframework.http.MediaType;
@@ -28,22 +30,37 @@ public class ShopController {
     private final ShopService shopService;
     private final EmployeeRepository employeeRepository;
     private final ServiceRepository serviceRepository;
-    private final ShopRepository shopRepository; // Constructor injection için eklendi
+    private final ShopRepository shopRepository;
+    private final UserRepository userRepository;
 
     // Tüm bağımlılıklar tek bir Constructor Injection ile güvenli şekilde enjekte edildi
     public ShopController(ShopService shopService,
                           EmployeeRepository employeeRepository,
                           ServiceRepository serviceRepository,
-                          ShopRepository shopRepository) {
+                          ShopRepository shopRepository,
+                          UserRepository userRepository) {
         this.shopService = shopService;
         this.employeeRepository = employeeRepository;
         this.serviceRepository = serviceRepository;
         this.shopRepository = shopRepository;
+        this.userRepository = userRepository;
     }
 
     @PostMapping("/register")
-    public Shop registerShop(@RequestBody Shop shop) {
-        return shopService.createShop(shop);
+    public ResponseEntity<?> registerShop(@RequestBody Map<String, Object> payload) {
+        Long ownerId = Long.valueOf(payload.get("ownerId").toString());
+        User owner = userRepository.findById(ownerId)
+                .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
+
+        Shop shop = new Shop();
+        shop.setName(payload.get("name").toString());
+        shop.setCity(payload.get("city").toString());
+        shop.setDistrict(payload.get("district").toString());
+        shop.setAddressText(payload.get("addressText").toString());
+        shop.setOwner(owner);
+
+        Shop savedShop = shopRepository.save(shop);
+        return ResponseEntity.ok(savedShop);
     }
 
     @GetMapping

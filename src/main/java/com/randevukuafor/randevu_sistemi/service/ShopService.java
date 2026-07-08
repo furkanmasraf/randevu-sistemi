@@ -45,7 +45,7 @@ public class ShopService {
 
     //  Entity -> DTO Dönüştürücü Yardımcı Metot (Mapper)
     public ShopDTO convertToDTO(Shop shop) {
-        return new ShopDTO(
+        ShopDTO dto = new ShopDTO(
                 shop.getId(),
                 shop.getName(),
                 shop.getCity(),
@@ -55,5 +55,8 @@ public class ShopService {
                 shop.getPhoneNumber(),
                 shop.getImageUrl()
         );
+        dto.setStartTime(shop.getStartTime());
+        dto.setEndTime(shop.getEndTime());
+        return dto;
     }
 }
