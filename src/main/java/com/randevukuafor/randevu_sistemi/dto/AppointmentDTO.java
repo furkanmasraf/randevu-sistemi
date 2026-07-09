@@ -13,10 +13,12 @@ public class AppointmentDTO {
     private LocalDateTime appointmentTime;
     private String status;
     private String customerPhone;
+    private String shopAddress;
+    private String shopPhone;
 
 
     // Kolay eşleme için Dolu Constructor
-    public AppointmentDTO(Long id, String customerName, String shopName, String employeeName, String serviceName, BigDecimal price, LocalDateTime appointmentTime, String status, String customerPhone) {
+    public AppointmentDTO(Long id, String customerName, String shopName, String employeeName, String serviceName, BigDecimal price, LocalDateTime appointmentTime, String status, String customerPhone, String shopAddress, String shopPhone) {
         this.id = id;
         this.customerName = customerName;
         this.shopName = shopName;
@@ -26,6 +28,8 @@ public class AppointmentDTO {
         this.appointmentTime = appointmentTime;
         this.status = status;
         this.customerPhone = customerPhone;
+        this.shopAddress = shopAddress;
+        this.shopPhone = shopPhone;
     }
 
     // Getter ve Setter'lar
@@ -55,4 +59,10 @@ public class AppointmentDTO {
 
     public String getCustomerPhone() { return customerPhone; }
     public void setCustomerPhone(String status) { this.customerPhone = customerPhone; }
+
+    public String getShopAddress() { return shopAddress; }
+    public void setShopAddress(String shopAddress) { this.shopAddress = shopAddress; }
+
+    public String getShopPhone() { return shopPhone; }
+    public void setShopPhone(String shopPhone) { this.shopPhone = shopPhone; }
 }
