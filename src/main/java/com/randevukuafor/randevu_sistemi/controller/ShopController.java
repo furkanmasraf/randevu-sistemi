@@ -1,5 +1,7 @@
 package com.randevukuafor.randevu_sistemi.controller;
 
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 import com.randevukuafor.randevu_sistemi.dto.ShopDTO;
 import com.randevukuafor.randevu_sistemi.model.Employee;
 import com.randevukuafor.randevu_sistemi.model.Service;
@@ -27,6 +29,7 @@ import java.util.*;
 @CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174"})
 public class ShopController {
 
+    private final Cloudinary cloudinary;
     private final ShopService shopService;
     private final EmployeeRepository employeeRepository;
     private final ServiceRepository serviceRepository;
@@ -34,11 +37,13 @@ public class ShopController {
     private final UserRepository userRepository;
 
     // Tüm bağımlılıklar tek bir Constructor Injection ile güvenli şekilde enjekte edildi
-    public ShopController(ShopService shopService,
+    public ShopController(Cloudinary cloudinary,
+                          ShopService shopService,
                           EmployeeRepository employeeRepository,
                           ServiceRepository serviceRepository,
                           ShopRepository shopRepository,
                           UserRepository userRepository) {
+        this.cloudinary = cloudinary;
         this.shopService = shopService;
         this.employeeRepository = employeeRepository;
         this.serviceRepository = serviceRepository;
@@ -180,22 +185,18 @@ public class ShopController {
 
         Shop shop = shopRepository.findById(shopId).orElseThrow();
 
-        String uploadDir = "uploads";
-        java.io.File directory = new java.io.File(uploadDir);
-        if (!directory.exists()) directory.mkdirs();
-
-        // 1. LOGO KAYDI
+        // 1. LOGO KAYDI (Cloudinary)
         if (logo != null && !logo.isEmpty()) {
-            String logoName = UUID.randomUUID().toString() + "_" + logo.getOriginalFilename();
-            Files.copy(logo.getInputStream(), Paths.get(uploadDir, logoName), StandardCopyOption.REPLACE_EXISTING);
-            shop.setImageUrl("/uploads/" + logoName); // Veritabanındaki logo alanı
+            Map uploadResult = cloudinary.uploader().upload(logo.getBytes(), ObjectUtils.emptyMap());
+            String url = uploadResult.get("secure_url").toString();
+            shop.setImageUrl(url);
         }
 
-        // 2. VİTRİN GÖRSELİ (SLIDER) KAYDI
+        // 2. VİTRİN GÖRSELİ (Cloudinary)
         if (vitrinFile != null && !vitrinFile.isEmpty()) {
-            String vitrinName = UUID.randomUUID().toString() + "_" + vitrinFile.getOriginalFilename();
-            Files.copy(vitrinFile.getInputStream(), Paths.get(uploadDir, vitrinName), StandardCopyOption.REPLACE_EXISTING);
-            shop.setVitrinImageUrl("/uploads/" + vitrinName); // Veritabanındaki yeni vitrin alanı
+            Map uploadResult = cloudinary.uploader().upload(vitrinFile.getBytes(), ObjectUtils.emptyMap());
+            String url = uploadResult.get("secure_url").toString();
+            shop.setVitrinImageUrl(url);
         }
 
         shop.setName(shopName);
@@ -203,20 +204,5 @@ public class ShopController {
         shopRepository.save(shop);
 
         return ResponseEntity.ok(shopService.convertToDTO(shop));
-    }
-
-    @GetMapping("/test-file/{filename}")
-    public ResponseEntity<String> testFile(@PathVariable String filename) {
-        // Sunucunun o an hangi dizinde çalıştığını öğreniyoruz
-        String currentDir = System.getProperty("user.dir");
-        // Dosyayı aradığımız tam yolu oluşturuyoruz
-        Path path = Paths.get(currentDir, "uploads", filename);
-
-        if (Files.exists(path)) {
-            return ResponseEntity.ok("Dosya bulundu! \nTam Yol: " + path.toAbsolutePath());
-        } else {
-            return ResponseEntity.status(404).body("Dosya bulunamadı! \nAranan Yol: " + path.toAbsolutePath() +
-                    "\nÇalışma Dizini (Current Dir): " + currentDir);
-        }
     }
 }
