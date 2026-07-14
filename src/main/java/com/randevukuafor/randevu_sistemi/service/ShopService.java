@@ -53,7 +53,8 @@ public class ShopService {
                 shop.getAddressText(),
                 shop.isSubscribed(),
                 shop.getPhoneNumber(),
-                shop.getImageUrl()
+                shop.getImageUrl(),
+                shop.getVitrinImageUrl()
         );
         dto.setStartTime(shop.getStartTime());
         dto.setEndTime(shop.getEndTime());

@@ -26,10 +26,9 @@ public class Shop implements java.io.Serializable {
     private boolean subscribed;
     private String phoneNumber;
     private String imageUrl;
-
-    // --- Yeni Eklenen Çalışma Saatleri Alanları ---
     private String startTime = "09:00";
     private String endTime = "20:00";
+    private String vitrinImageUrl;
 
     @ManyToOne
     @JoinColumn(name = "owner_id")
@@ -129,4 +128,7 @@ public class Shop implements java.io.Serializable {
 
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+
+    public String getVitrinImageUrl() { return vitrinImageUrl; }
+    public void setVitrinImageUrl(String vitrinImageUrl) { this.vitrinImageUrl = vitrinImageUrl; }
 }

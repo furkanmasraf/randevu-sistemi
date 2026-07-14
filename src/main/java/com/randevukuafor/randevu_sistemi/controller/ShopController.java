@@ -173,34 +173,35 @@ public class ShopController {
     @PutMapping(value = "/{shopId}/update-with-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ShopDTO> updateShopWithImage(
             @PathVariable Long shopId,
-            @RequestParam(value = "file", required = false) MultipartFile file,
+            @RequestParam(value = "logo", required = false) MultipartFile logo,
+            @RequestParam(value = "vitrinFile", required = false) MultipartFile vitrinFile, // Vitrin dosyası eklendi
             @RequestParam("shopName") String shopName,
             @RequestParam("phoneNumber") String phoneNumber) throws IOException {
 
         Shop shop = shopRepository.findById(shopId).orElseThrow();
 
-        // 1. KLASÖR KONTROLÜ VE OLUŞTURMA (Eksik olan kısım burası!)
         String uploadDir = "uploads";
         java.io.File directory = new java.io.File(uploadDir);
-        if (!directory.exists()) {
-            directory.mkdirs();
+        if (!directory.exists()) directory.mkdirs();
+
+        // 1. LOGO KAYDI
+        if (logo != null && !logo.isEmpty()) {
+            String logoName = UUID.randomUUID().toString() + "_" + logo.getOriginalFilename();
+            Files.copy(logo.getInputStream(), Paths.get(uploadDir, logoName), StandardCopyOption.REPLACE_EXISTING);
+            shop.setImageUrl("/uploads/" + logoName); // Veritabanındaki logo alanı
         }
 
-        if (file != null && !file.isEmpty()) {
-            // 2. Dosyayı kaydet
-            String fileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
-            Path path = Paths.get(uploadDir + java.io.File.separator + fileName);
-            Files.copy(file.getInputStream(), path, StandardCopyOption.REPLACE_EXISTING);
-
-            // 3. Veritabanına kaydet (Ön yüzün doğrudan erişebileceği URL formatı)
-            shop.setImageUrl("/uploads/" + fileName);
+        // 2. VİTRİN GÖRSELİ (SLIDER) KAYDI
+        if (vitrinFile != null && !vitrinFile.isEmpty()) {
+            String vitrinName = UUID.randomUUID().toString() + "_" + vitrinFile.getOriginalFilename();
+            Files.copy(vitrinFile.getInputStream(), Paths.get(uploadDir, vitrinName), StandardCopyOption.REPLACE_EXISTING);
+            shop.setVitrinImageUrl("/uploads/" + vitrinName); // Veritabanındaki yeni vitrin alanı
         }
 
         shop.setName(shopName);
         shop.setPhoneNumber(phoneNumber);
         shopRepository.save(shop);
 
-        // Dönüşte DTO kullandığın için shopService'in bunu desteklediğinden emin ol
         return ResponseEntity.ok(shopService.convertToDTO(shop));
     }
 }
