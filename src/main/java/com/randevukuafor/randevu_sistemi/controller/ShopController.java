@@ -204,4 +204,19 @@ public class ShopController {
 
         return ResponseEntity.ok(shopService.convertToDTO(shop));
     }
+
+    @GetMapping("/test-file/{filename}")
+    public ResponseEntity<String> testFile(@PathVariable String filename) {
+        // Sunucunun o an hangi dizinde çalıştığını öğreniyoruz
+        String currentDir = System.getProperty("user.dir");
+        // Dosyayı aradığımız tam yolu oluşturuyoruz
+        Path path = Paths.get(currentDir, "uploads", filename);
+
+        if (Files.exists(path)) {
+            return ResponseEntity.ok("Dosya bulundu! \nTam Yol: " + path.toAbsolutePath());
+        } else {
+            return ResponseEntity.status(404).body("Dosya bulunamadı! \nAranan Yol: " + path.toAbsolutePath() +
+                    "\nÇalışma Dizini (Current Dir): " + currentDir);
+        }
+    }
 }
