@@ -4,6 +4,7 @@ import com.randevukuafor.randevu_sistemi.dto.RegisterRequest;
 import com.randevukuafor.randevu_sistemi.model.User;
 import com.randevukuafor.randevu_sistemi.service.UserService;
 import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -30,5 +31,15 @@ public class UserController {
     @GetMapping
     public List<User> getAllUsers() {
         return userService.getAllUsers();
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<User> getUserById(@PathVariable Long id) {
+        User user = userService.findById(id); // UserService'inde böyle bir metodun olmalı
+        if (user != null) {
+            return ResponseEntity.ok(user);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 }
