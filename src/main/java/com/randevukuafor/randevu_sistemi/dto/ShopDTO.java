@@ -1,5 +1,7 @@
 package com.randevukuafor.randevu_sistemi.dto;
 
+import java.util.List;
+
 public class ShopDTO {
     private Long id;
     private String name;
@@ -11,12 +13,12 @@ public class ShopDTO {
     private String endTime;
     private String phoneNumber;
     private String imageUrl;
-    private String vitrinImageUrl;
+    private List<String> vitrinImageUrls;
 
     // --- BOŞ VE PARAMETRELİ CONSTRUCTOR ---
     public ShopDTO() {}
 
-    public ShopDTO(Long id, String name, String city, String district, String addressText, boolean subscribed, String phoneNumber, String imageUrl, String vitrinImageUrl) {
+    public ShopDTO(Long id, String name, String city, String district, String addressText, boolean subscribed, String phoneNumber, String imageUrl, List<String> vitrinImageUrls) {
         this.id = id;
         this.name = name;
         this.city = city;
@@ -25,7 +27,7 @@ public class ShopDTO {
         this.subscribed = subscribed;
         this.phoneNumber = phoneNumber;
         this.imageUrl = imageUrl;
-        this.vitrinImageUrl = vitrinImageUrl;
+        this.vitrinImageUrls = vitrinImageUrls;
     }
 
     // --- GETTER VE SETTER METOTLARI ---
@@ -68,6 +70,11 @@ public class ShopDTO {
         this.endTime = endTime;
     }
 
-    public String getVitrinImageUrl() { return vitrinImageUrl; }
-    public void setVitrinImageUrl(String vitrinImageUrl) { this.vitrinImageUrl = vitrinImageUrl; }
+    public List<String> getVitrinImageUrls() {
+        return vitrinImageUrls;
+    }
+
+    public void setVitrinImageUrls(List<String> vitrinImageUrls) {
+        this.vitrinImageUrls = vitrinImageUrls;
+    }
 }

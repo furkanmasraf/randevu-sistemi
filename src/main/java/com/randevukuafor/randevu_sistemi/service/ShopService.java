@@ -5,6 +5,9 @@ import com.randevukuafor.randevu_sistemi.model.Shop;
 import com.randevukuafor.randevu_sistemi.repository.ShopRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -45,6 +48,13 @@ public class ShopService {
 
     //  Entity -> DTO Dönüştürücü Yardımcı Metot (Mapper)
     public ShopDTO convertToDTO(Shop shop) {
+        List<String> imageList = new ArrayList<>();
+
+        // Veritabanındaki "url1,url2,url3" yapısını parçalayıp listeye atıyoruz
+        if (shop.getVitrinImageUrl() != null && !shop.getVitrinImageUrl().isEmpty()) {
+            String[] urls = shop.getVitrinImageUrl().split(",");
+            imageList = Arrays.asList(urls);
+        }
         ShopDTO dto = new ShopDTO(
                 shop.getId(),
                 shop.getName(),
@@ -54,7 +64,7 @@ public class ShopService {
                 shop.isSubscribed(),
                 shop.getPhoneNumber(),
                 shop.getImageUrl(),
-                shop.getVitrinImageUrl()
+                imageList
         );
         dto.setStartTime(shop.getStartTime());
         dto.setEndTime(shop.getEndTime());

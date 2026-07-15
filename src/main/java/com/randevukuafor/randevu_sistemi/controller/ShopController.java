@@ -179,24 +179,27 @@ public class ShopController {
     public ResponseEntity<ShopDTO> updateShopWithImage(
             @PathVariable Long shopId,
             @RequestParam(value = "logo", required = false) MultipartFile logo,
-            @RequestParam(value = "vitrinFile", required = false) MultipartFile vitrinFile, // Vitrin dosyası eklendi
+            @RequestParam(value = "vitrinFiles", required = false) List<MultipartFile> vitrinFiles,
             @RequestParam("shopName") String shopName,
             @RequestParam("phoneNumber") String phoneNumber) throws IOException {
 
         Shop shop = shopRepository.findById(shopId).orElseThrow();
 
-        // 1. LOGO KAYDI (Cloudinary)
+        // 1. LOGO İŞLEMLERİ
         if (logo != null && !logo.isEmpty()) {
             Map uploadResult = cloudinary.uploader().upload(logo.getBytes(), ObjectUtils.emptyMap());
-            String url = uploadResult.get("secure_url").toString();
-            shop.setImageUrl(url);
+            shop.setImageUrl(uploadResult.get("secure_url").toString());
         }
 
-        // 2. VİTRİN GÖRSELİ (Cloudinary)
-        if (vitrinFile != null && !vitrinFile.isEmpty()) {
-            Map uploadResult = cloudinary.uploader().upload(vitrinFile.getBytes(), ObjectUtils.emptyMap());
-            String url = uploadResult.get("secure_url").toString();
-            shop.setVitrinImageUrl(url);
+        // 2. ÇOKLU VİTRİN GÖRSELİ İŞLEMLERİ
+        if (vitrinFiles != null && !vitrinFiles.isEmpty()) {
+            List<String> urls = new ArrayList<>();
+            for (MultipartFile file : vitrinFiles) {
+                Map uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.emptyMap());
+                urls.add(uploadResult.get("secure_url").toString());
+            }
+            // Birden fazla URL'i tek bir String'de virgülle birleştirip kaydediyoruz
+            shop.setVitrinImageUrl(String.join(",", urls));
         }
 
         shop.setName(shopName);

@@ -8,13 +8,14 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class CloudinaryConfig {
-    @Value("${CLOUDINARY_CLOUD_NAME}")
+    // Eğer değişken bulunamazsa "placeholder" değerini kullanır ve uygulamanın çökmesini önler
+    @Value("${cloudinary.cloud-name:default_name}")
     private String cloudName;
 
-    @Value("${CLOUDINARY_API_KEY}")
+    @Value("${cloudinary.api-key:default_key}")
     private String apiKey;
 
-    @Value("${CLOUDINARY_API_SECRET}")
+    @Value("${cloudinary.api-secret:default_secret}")
     private String apiSecret;
 
     @Bean
