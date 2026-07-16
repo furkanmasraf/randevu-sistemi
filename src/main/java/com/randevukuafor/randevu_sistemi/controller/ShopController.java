@@ -190,6 +190,9 @@ public class ShopController {
 
         Shop shop = shopRepository.findById(shopId).orElseThrow();
 
+        System.out.println("Gelen ShopName: " + shopName);
+        System.out.println("Gelen PhoneNumber: " + phoneNumber);
+
         // 1. LOGO İŞLEMLERİ
         if (logo != null && !logo.isEmpty()) {
             Map uploadResult = cloudinary.uploader().upload(logo.getBytes(), ObjectUtils.emptyMap());
