@@ -100,8 +100,6 @@ public class ShopController {
         return ResponseEntity.ok(response);
     }
 
-    // --- YENİ EKLENEN OPERASYONEL ENDPOINT'LER ---
-
     // Sonsuz döngüyü (Infinite Recursion) engellemek için ShopDTO dönen güncel metot
     @GetMapping("/owner/{userId}")
     public ResponseEntity<?> getShopByOwner(@PathVariable Long userId) {
@@ -122,6 +120,13 @@ public class ShopController {
         dto.setDistrict(shop.getDistrict());
         dto.setStartTime(shop.getStartTime());
         dto.setEndTime(shop.getEndTime());
+        dto.setPhoneNumber(shop.getPhoneNumber());
+        dto.setImageUrl(shop.getImageUrl());
+        if (shop.getVitrinImageUrl() != null) {
+            dto.setVitrinImageUrls(Arrays.asList(shop.getVitrinImageUrl().split(",")));
+        } else {
+            dto.setVitrinImageUrls(new ArrayList<>());
+        }
 
         return ResponseEntity.ok(dto);
     }
