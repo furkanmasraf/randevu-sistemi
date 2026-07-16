@@ -183,33 +183,43 @@ public class ShopController {
     @PutMapping(value = "/{shopId}/update-with-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ShopDTO> updateShopWithImage(
             @PathVariable Long shopId,
-            @RequestParam(value = "logo", required = false) MultipartFile logo,
+            @RequestParam(value = "existingImageUrls") String existingImageUrlsJson,
             @RequestParam(value = "vitrinFiles", required = false) List<MultipartFile> vitrinFiles,
+            @RequestParam(value = "logo", required = false) MultipartFile logo, // Logo parametresini ekledik
             @RequestParam("shopName") String shopName,
-            @RequestParam("phoneNumber") String phoneNumber) throws IOException {
+            @RequestParam("phoneNumber") String phoneNumber,
+            @RequestParam(value = "logoDeleted", required = false) boolean logoDeleted // Parametreye isim verdik
+    ) throws IOException {
 
         Shop shop = shopRepository.findById(shopId).orElseThrow();
 
-        System.out.println("Gelen ShopName: " + shopName);
-        System.out.println("Gelen PhoneNumber: " + phoneNumber);
-
         // 1. LOGO İŞLEMLERİ
         if (logo != null && !logo.isEmpty()) {
+            // Yeni logo yüklendiyse Cloudinary'e yükle
             Map uploadResult = cloudinary.uploader().upload(logo.getBytes(), ObjectUtils.emptyMap());
             shop.setImageUrl(uploadResult.get("secure_url").toString());
+        } else if (logoDeleted) {
+            // Eğer frontend'den logoDeleted = true geldiyse
+            shop.setImageUrl(null);
         }
 
-        // 2. ÇOKLU VİTRİN GÖRSELİ İŞLEMLERİ
-        if (vitrinFiles != null && !vitrinFiles.isEmpty()) {
-            List<String> urls = new ArrayList<>();
+        // 2. Vitrin Görsel İşlemleri (Mevcut ve Yeni)
+        List<String> remainingUrls = new ArrayList<>();
+        if (existingImageUrlsJson != null && !existingImageUrlsJson.equals("[]")) {
+            String cleanJson = existingImageUrlsJson.replace("[", "").replace("]", "").replace("\"", "");
+            if (!cleanJson.isEmpty()) {
+                remainingUrls.addAll(Arrays.asList(cleanJson.split(",")));
+            }
+        }
+
+        if (vitrinFiles != null) {
             for (MultipartFile file : vitrinFiles) {
                 Map uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.emptyMap());
-                urls.add(uploadResult.get("secure_url").toString());
+                remainingUrls.add(uploadResult.get("secure_url").toString());
             }
-            // Birden fazla URL'i tek bir String'de virgülle birleştirip kaydediyoruz
-            shop.setVitrinImageUrl(String.join(",", urls));
         }
 
+        shop.setVitrinImageUrl(String.join(",", remainingUrls));
         shop.setName(shopName);
         shop.setPhoneNumber(phoneNumber);
         shopRepository.save(shop);
