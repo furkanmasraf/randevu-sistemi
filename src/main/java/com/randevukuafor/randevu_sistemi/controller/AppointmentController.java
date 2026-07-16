@@ -166,4 +166,18 @@ public class AppointmentController {
         appointmentRepository.save(appointment);
         return ResponseEntity.ok(Map.of("message", "Durum güncellendi"));
     }
+
+    @PostMapping("/block")
+    public ResponseEntity<?> blockSlot(@RequestBody Map<String, Object> payload) {
+        try {
+            Long employeeId = Long.valueOf(payload.get("employeeId").toString());
+            LocalDateTime time = LocalDateTime.parse(payload.get("appointmentTime").toString());
+
+            appointmentService.blockSlot(employeeId, time);
+
+            return ResponseEntity.ok(Map.of("message", "Saat başarıyla bloklandı."));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("message", e.getMessage()));
+        }
+    }
 }

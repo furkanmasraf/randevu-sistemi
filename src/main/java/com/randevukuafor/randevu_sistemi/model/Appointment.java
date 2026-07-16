@@ -12,7 +12,7 @@ public class Appointment {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = true)
+    @JoinColumn(name = "user_id", nullable = false)
     private User user; // Randevuyu alan müşteri
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -24,7 +24,7 @@ public class Appointment {
     private Employee employee; // Hizmet verecek personel
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "service_id", nullable = true)
+    @JoinColumn(name = "service_id", nullable = false)
     private Service service; // Alınacak hizmet (Saç Kesimi vb.)
 
     @Column(name = "appointment_time", nullable = false)
