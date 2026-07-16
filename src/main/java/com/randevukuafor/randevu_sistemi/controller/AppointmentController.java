@@ -173,7 +173,23 @@ public class AppointmentController {
             Long employeeId = Long.valueOf(payload.get("employeeId").toString());
             LocalDateTime time = LocalDateTime.parse(payload.get("appointmentTime").toString());
 
-            appointmentService.blockSlot(employeeId, time);
+            Employee employee = employeeRepository.findById(employeeId).orElseThrow();
+
+            Appointment block = new Appointment();
+            block.setEmployee(employee);
+            block.setShop(employee.getShop());
+            block.setAppointmentTime(time);
+            block.setStatus("BLOCKED");
+
+            // 1. Bir "Bloklama" kullanıcısı veya dükkan sahibi ID'si (Örn: 1L)
+            User admin = userRepository.findById(1L).orElseThrow(() -> new RuntimeException("Admin kullanıcı bulunamadı"));
+            block.setUser(admin);
+
+            // 2. Bir "Bloklama Hizmeti" (Eğer yoksa, veritabanına "Bloklama" adında 0 TL bir hizmet ekle)
+            Service blockService = serviceRepository.findById(1L).orElseThrow(() -> new RuntimeException("Bloklama hizmeti bulunamadı"));
+            block.setService(blockService);
+
+            appointmentRepository.save(block);
 
             return ResponseEntity.ok(Map.of("message", "Saat başarıyla bloklandı."));
         } catch (Exception e) {
