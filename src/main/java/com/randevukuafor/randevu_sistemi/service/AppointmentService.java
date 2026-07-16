@@ -53,6 +53,7 @@ public class AppointmentService {
         LocalDateTime now = LocalDateTime.now();
 
         return all.stream()
+                .filter(a -> !"BLOCKED".equals(a.getStatus()))
                 .filter(a -> {
                     if (filter.equals("past")) return a.getAppointmentTime().isBefore(now);
                     if (filter.equals("today")) return a.getAppointmentTime().toLocalDate().isEqual(now.toLocalDate());
@@ -74,7 +75,7 @@ public class AppointmentService {
                             appointment.getShop().getPhoneNumber()
                     );
                 })
-                .toList();
+                .collect(Collectors.toList());
     }
 
     // 1. Randevu Kaydetme İş Mantığı
