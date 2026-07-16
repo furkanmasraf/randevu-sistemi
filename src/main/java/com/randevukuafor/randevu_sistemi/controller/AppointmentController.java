@@ -196,4 +196,12 @@ public class AppointmentController {
             return ResponseEntity.status(500).body(Map.of("message", e.getMessage()));
         }
     }
+
+    @DeleteMapping("/unblock")
+    public ResponseEntity<?> unblockSlot(@RequestParam Long employeeId, @RequestParam String appointmentTime) {
+        LocalDateTime time = LocalDateTime.parse(appointmentTime);
+        // Veritabanından o saate ait, status'ü 'BLOCKED' olan kaydı bul ve sil
+        appointmentRepository.deleteByEmployeeIdAndAppointmentTimeAndStatus(employeeId, time, "BLOCKED");
+        return ResponseEntity.ok(Map.of("message", "Bloklama kaldırıldı."));
+    }
 }

@@ -1,6 +1,8 @@
 package com.randevukuafor.randevu_sistemi.repository;
 
 import com.randevukuafor.randevu_sistemi.model.Appointment;
+import jakarta.transaction.Transactional;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.repository.query.Param;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -23,6 +25,10 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     // AppointmentRepository.java
     @Query("SELECT a.appointmentTime FROM Appointment a WHERE a.employee.id = :employeeId AND DATE(a.appointmentTime) = :date AND a.status != 'CANCELLED'")
     List<LocalDateTime> findTakenSlotsByEmployeeAndDate(@Param("employeeId") Long employeeId, @Param("date") LocalDate date);
+
+    @Modifying
+    @Transactional
+    void deleteByEmployeeIdAndAppointmentTimeAndStatus(Long employeeId, LocalDateTime appointmentTime, String status);
 
     // Müşterinin kendi randevularını listelemesi için
     List<Appointment> findByUserId(Long userId);

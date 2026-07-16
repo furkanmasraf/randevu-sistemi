@@ -175,10 +175,9 @@ public class AppointmentService {
 
     //  5. Berberin Kullanıcı Kimliğine Göre Kendi Dükkanının Randevularını Filtreleme
     public List<AppointmentDTO> getAppointmentsByShopOwner(Long userId) {
-        // Sistem genelindeki randevulardan, dükkan sahibi bilgisi giriş yapan berbere eşit olanları süzüyoruz.
-        // Not: Eğer Shop entity'nde owner alanı yoksa, geçici test için bu filtreyi kaldırıp getAppointmentsByShop(1L) döndürebilirsin.
         return appointmentRepository.findAll().stream()
                 .filter(app -> app.getShop().getOwner() != null && app.getShop().getOwner().getId().equals(userId))
+                .filter(app -> !"BLOCKED".equals(app.getStatus()))
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
