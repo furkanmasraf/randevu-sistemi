@@ -14,10 +14,13 @@ import java.util.Optional;
 @Repository
 public interface AppointmentRepository extends JpaRepository<Appointment, Long> {
 
-    @Query("SELECT a FROM Appointment a WHERE a.employee.id = :employeeId AND FUNCTION('DATE', a.appointmentTime) = :date")
+    @Query("SELECT a FROM Appointment a WHERE a.employee.id = :employeeId AND a.date = :date AND a.status IN ('APPROVED', 'PENDING')")
+    List<Appointment> findAvailableAppointments(@Param("employeeId") Long employeeId, @Param("date") LocalDate date);
+
+    @Query("SELECT a FROM Appointment a WHERE a.employee.id = :employeeId AND FUNCTION('DATE', a.appointmentTime) = :date AND a.status IN ('APPROVED', 'PENDING')")
     List<Appointment> findByEmployeeIdAndDate(@Param("employeeId") Long employeeId, @Param("date") LocalDate date);
 
-    @Query("SELECT a.appointmentTime FROM Appointment a WHERE a.employee.id = :empId AND FUNCTION('DATE', a.appointmentTime) = :date")
+    @Query("SELECT a.appointmentTime FROM Appointment a WHERE a.employee.id = :empId AND FUNCTION('DATE', a.appointmentTime) = :date AND a.status IN ('APPROVED', 'PENDING')")
     List<LocalDateTime> findTakenSlotsByEmployeeAndDate(@Param("empId") Long empId, @Param("date") LocalDate date);
 
     // Müşterinin kendi randevularını listelemesi için
