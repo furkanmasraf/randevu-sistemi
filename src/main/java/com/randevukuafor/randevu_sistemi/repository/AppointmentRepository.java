@@ -14,7 +14,7 @@ import java.util.Optional;
 @Repository
 public interface AppointmentRepository extends JpaRepository<Appointment, Long> {
 
-    @Query("SELECT a FROM Appointment a WHERE a.employee.id = :employeeId AND FUNCTION('DATE', a.appointmentTime) = :date AND a.status IN ('APPROVED', 'PENDING')")
+    @Query("SELECT a FROM Appointment a WHERE a.employee.id = :employeeId AND FUNCTION('DATE', a.appointmentTime) = :date AND a.status IN ('APPROVED', 'PENDING', 'BLOCKED')")
     List<Appointment> findAvailableAppointments(@Param("employeeId") Long employeeId, @Param("date") LocalDate date);
 
     @Query("SELECT a FROM Appointment a WHERE a.employee.id = :employeeId AND FUNCTION('DATE', a.appointmentTime) = :date AND a.status IN ('APPROVED', 'PENDING')")
@@ -33,4 +33,7 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     Optional<Appointment> findByEmployeeIdAndAppointmentTimeAndStatusNot(Long employeeId, LocalDateTime appointmentTime, String status);
 
     boolean existsByEmployeeIdAndAppointmentTimeAndStatusNot(Long employeeId, LocalDateTime appointmentTime, String status);
+
+    // Sadece aktif (onaylı veya bekleyen) randevuları kontrol eder
+    boolean existsByEmployeeIdAndAppointmentTimeAndStatusIn(Long employeeId, LocalDateTime appointmentTime, List<String> statuses);
 }

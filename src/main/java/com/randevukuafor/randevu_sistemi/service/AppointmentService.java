@@ -11,6 +11,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -197,5 +198,25 @@ public class AppointmentService {
                 appointment.getShop().getAddressText(),
                 appointment.getShop().getPhoneNumber()
         );
+    }
+
+    public void blockSlot(Long employeeId, LocalDateTime appointmentTime) {
+        // 1. Zaten dolu mu kontrol et
+        List<String> activeStatuses = Arrays.asList("APPROVED", "PENDING", "BLOCKED");
+        if (appointmentRepository.existsByEmployeeIdAndAppointmentTimeAndStatusIn(employeeId, appointmentTime, activeStatuses)) {
+            throw new IllegalStateException("Bu saat zaten dolu veya bloklanmış.");
+        }
+
+        // 2. Personeli bul
+        Employee employee = employeeRepository.findById(employeeId)
+                .orElseThrow(() -> new RuntimeException("Personel bulunamadı"));
+
+        // 3. Bloklama kaydını oluştur
+        Appointment block = new Appointment();
+        block.setEmployee(employee);
+        block.setAppointmentTime(appointmentTime);
+        block.setStatus("BLOCKED");
+
+        appointmentRepository.save(block);
     }
 }
