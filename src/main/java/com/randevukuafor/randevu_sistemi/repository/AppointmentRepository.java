@@ -20,8 +20,9 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     @Query("SELECT a FROM Appointment a WHERE a.employee.id = :employeeId AND FUNCTION('DATE', a.appointmentTime) = :date AND a.status IN ('APPROVED', 'PENDING')")
     List<Appointment> findByEmployeeIdAndDate(@Param("employeeId") Long employeeId, @Param("date") LocalDate date);
 
-    @Query("SELECT a.appointmentTime FROM Appointment a WHERE a.employee.id = :empId AND FUNCTION('DATE', a.appointmentTime) = :date AND a.status IN ('APPROVED', 'PENDING')")
-    List<LocalDateTime> findTakenSlotsByEmployeeAndDate(@Param("empId") Long empId, @Param("date") LocalDate date);
+    // AppointmentRepository.java
+    @Query("SELECT a.appointmentTime FROM Appointment a WHERE a.employee.id = :employeeId AND DATE(a.appointmentTime) = :date AND a.status != 'CANCELLED'")
+    List<LocalDateTime> findTakenSlotsByEmployeeAndDate(@Param("employeeId") Long employeeId, @Param("date") LocalDate date);
 
     // Müşterinin kendi randevularını listelemesi için
     List<Appointment> findByUserId(Long userId);
