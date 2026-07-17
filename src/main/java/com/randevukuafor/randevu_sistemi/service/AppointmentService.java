@@ -163,6 +163,7 @@ public class AppointmentService {
     public List<AppointmentDTO> getAppointmentsByUser(Long userId) {
         return appointmentRepository.findByUserId(userId)
                 .stream()
+                .filter(app -> !"BLOCKED".equals(app.getStatus()))
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
