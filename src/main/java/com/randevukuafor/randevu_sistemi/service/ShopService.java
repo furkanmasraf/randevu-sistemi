@@ -64,10 +64,18 @@ public class ShopService {
                 shop.isSubscribed(),
                 shop.getPhoneNumber(),
                 shop.getImageUrl(),
-                imageList
+                imageList,
+                shop.getCategory()
         );
         dto.setStartTime(shop.getStartTime());
         dto.setEndTime(shop.getEndTime());
         return dto;
+    }
+
+    public List<ShopDTO> getShopsByCategory(String category) {
+        return shopRepository.findByCategory(category)
+                .stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
 }

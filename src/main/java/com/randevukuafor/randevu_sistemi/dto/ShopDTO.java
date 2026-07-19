@@ -14,11 +14,12 @@ public class ShopDTO {
     private String phoneNumber;
     private String imageUrl;
     private List<String> vitrinImageUrls;
+    private String category;
 
     // --- BOŞ VE PARAMETRELİ CONSTRUCTOR ---
     public ShopDTO() {}
 
-    public ShopDTO(Long id, String name, String city, String district, String addressText, boolean subscribed, String phoneNumber, String imageUrl, List<String> vitrinImageUrls) {
+    public ShopDTO(Long id, String name, String city, String district, String addressText, boolean subscribed, String phoneNumber, String imageUrl, List<String> vitrinImageUrls, String category){
         this.id = id;
         this.name = name;
         this.city = city;
@@ -28,6 +29,7 @@ public class ShopDTO {
         this.phoneNumber = phoneNumber;
         this.imageUrl = imageUrl;
         this.vitrinImageUrls = vitrinImageUrls;
+        this.category = category;
     }
 
     // --- GETTER VE SETTER METOTLARI ---
@@ -73,8 +75,10 @@ public class ShopDTO {
     public List<String> getVitrinImageUrls() {
         return vitrinImageUrls;
     }
-
     public void setVitrinImageUrls(List<String> vitrinImageUrls) {
         this.vitrinImageUrls = vitrinImageUrls;
     }
+
+    public String getCategory() { return category; }
+    public void setCategory(String category) { this.category = category; }
 }

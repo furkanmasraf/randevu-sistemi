@@ -29,6 +29,7 @@ public class Shop implements java.io.Serializable {
     private String startTime = "09:00";
     private String endTime = "20:00";
     private String vitrinImageUrl;
+    private String category;
 
     @ManyToOne
     @JoinColumn(name = "owner_id")
@@ -131,4 +132,7 @@ public class Shop implements java.io.Serializable {
 
     public String getVitrinImageUrl() { return vitrinImageUrl; }
     public void setVitrinImageUrl(String vitrinImageUrl) { this.vitrinImageUrl = vitrinImageUrl; }
+
+    public String getCategory() { return category; }
+    public void setCategory(String category) { this.category = category; }
 }

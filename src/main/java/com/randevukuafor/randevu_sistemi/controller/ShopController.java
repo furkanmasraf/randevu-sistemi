@@ -23,6 +23,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/shops")
@@ -62,6 +63,9 @@ public class ShopController {
         shop.setCity(payload.get("city").toString());
         shop.setDistrict(payload.get("district").toString());
         shop.setAddressText(payload.get("addressText").toString());
+        if (payload.containsKey("category")) {
+            shop.setCategory(payload.get("category").toString());
+        }
         shop.setOwner(owner);
 
         Shop savedShop = shopRepository.save(shop);
@@ -225,5 +229,14 @@ public class ShopController {
         shopRepository.save(shop);
 
         return ResponseEntity.ok(shopService.convertToDTO(shop));
+    }
+
+    @GetMapping("/category/{category}")
+    public List<ShopDTO> getShopsByCategory(@PathVariable String category) {
+        // ShopRepository'den dönen List<Shop>'u DTO'ya dönüştürüyoruz
+        return shopRepository.findByCategory(category)
+                .stream()
+                .map(shopService::convertToDTO)
+                .collect(Collectors.toList());
     }
 }
