@@ -11,17 +11,13 @@ import com.randevukuafor.randevu_sistemi.repository.EmployeeRepository;
 import com.randevukuafor.randevu_sistemi.repository.ServiceRepository;
 import com.randevukuafor.randevu_sistemi.repository.UserRepository;
 import com.randevukuafor.randevu_sistemi.service.ShopService;
-import com.randevukuafor.randevu_sistemi.repository.ShopRepository; // Dükkan kayıt işlemleri için eklendi
+import com.randevukuafor.randevu_sistemi.repository.ShopRepository;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -37,7 +33,6 @@ public class ShopController {
     private final ShopRepository shopRepository;
     private final UserRepository userRepository;
 
-    // Tüm bağımlılıklar tek bir Constructor Injection ile güvenli şekilde enjekte edildi
     public ShopController(Cloudinary cloudinary,
                           ShopService shopService,
                           EmployeeRepository employeeRepository,
@@ -87,7 +82,6 @@ public class ShopController {
         return employeeRepository.findByShopId(shopId);
     }
 
-    // --- CRITICAL UPDATE: LAZY/Proxy sorununu çözmek için ResponseEntity<List<Map>> yapısına geçildi ---
     @GetMapping("/{shopId}/services")
     public ResponseEntity<List<Map<String, Object>>> getShopServices(@PathVariable Long shopId) {
         List<Service> services = serviceRepository.findByShopId(shopId);
@@ -104,29 +98,42 @@ public class ShopController {
         return ResponseEntity.ok(response);
     }
 
-    // Sonsuz döngüyü (Infinite Recursion) engellemek için ShopDTO dönen güncel metot
     @GetMapping("/owner/{userId}")
     public ResponseEntity<?> getShopByOwner(@PathVariable Long userId) {
         Optional<Shop> shopOpt = shopRepository.findByOwnerId(userId);
 
         if (shopOpt.isEmpty()) {
-            return ResponseEntity.status(404).body("Dükkan bulunamadı.");
+            Optional<User> userOpt = userRepository.findById(userId);
+            if (userOpt.isPresent()) {
+                User owner = userOpt.get();
+                Shop newShop = new Shop();
+                newShop.setName((owner.getFirstName() != null ? owner.getFirstName() : "Salon") + " " + (owner.getLastName() != null ? owner.getLastName() : "") + " Kuaför");
+                newShop.setCity("İstanbul");
+                newShop.setDistrict("Beyoğlu");
+                newShop.setAddressText("Adres henüz belirtilmedi.");
+                newShop.setCategory("Erkek Kuaförü");
+                newShop.setOwner(owner);
+                Shop savedShop = shopRepository.save(newShop);
+                shopOpt = Optional.of(savedShop);
+            } else {
+                return ResponseEntity.status(404).body("Kullanıcı ve Dükkan bulunamadı.");
+            }
         }
 
         Shop shop = shopOpt.get();
 
-        // DTO'ya dönüştür (Döngüden kurtulmak için)
         ShopDTO dto = new ShopDTO();
         dto.setId(shop.getId());
         dto.setName(shop.getName());
         dto.setAddressText(shop.getAddressText());
         dto.setCity(shop.getCity());
         dto.setDistrict(shop.getDistrict());
+        dto.setCategory(shop.getCategory());
         dto.setStartTime(shop.getStartTime());
         dto.setEndTime(shop.getEndTime());
         dto.setPhoneNumber(shop.getPhoneNumber());
         dto.setImageUrl(shop.getImageUrl());
-        if (shop.getVitrinImageUrl() != null) {
+        if (shop.getVitrinImageUrl() != null && !shop.getVitrinImageUrl().isEmpty()) {
             dto.setVitrinImageUrls(Arrays.asList(shop.getVitrinImageUrl().split(",")));
         } else {
             dto.setVitrinImageUrls(new ArrayList<>());
@@ -135,7 +142,6 @@ public class ShopController {
         return ResponseEntity.ok(dto);
     }
 
-    // Dükkanın Çalışma Saatlerini Güncelleme Endpoint'i
     @PutMapping("/{shopId}/working-hours")
     public ResponseEntity<?> updateWorkingHours(
             @PathVariable Long shopId,
@@ -151,24 +157,17 @@ public class ShopController {
         return ResponseEntity.ok(Map.of("message", "Çalışma saatleri başarıyla güncellendi"));
     }
 
-    // --- CRITICAL UPDATE: Ön yüzün eklenen hizmeti anında Proxy sarmalı olmadan okuyabilmesi sağlandı ---
     @PostMapping("/{shopId}/services")
     public ResponseEntity<?> addServiceToShop(@PathVariable Long shopId, @RequestBody Service service) {
-        // 1. Shop'u bul
         Shop shop = shopRepository.findById(shopId)
                 .orElseThrow(() -> new RuntimeException("Dükkan bulunamadı"));
 
-        // 2. Service nesnesini temizle ve ilişkiyi kur
         service.setShop(shop);
-
-        // 3. Kaydet
         Service savedService = serviceRepository.save(service);
 
-        // 4. Sadece basit bir başarı mesajı veya DTO dön (Entity'nin kendisini DÖNME!)
         return ResponseEntity.ok(Map.of("message", "Hizmet başarıyla eklendi", "id", savedService.getId()));
     }
 
-    // Hizmet Silme Endpoint'i
     @DeleteMapping("/services/{serviceId}")
     public ResponseEntity<?> deleteService(@PathVariable Long serviceId) {
         Service service = serviceRepository.findById(serviceId)
@@ -178,38 +177,49 @@ public class ShopController {
         return ResponseEntity.ok(Map.of("message", "Hizmet başarıyla silindi"));
     }
 
-    // işletme detayları..
     @GetMapping("/{shopId}/details")
     public ResponseEntity<ShopDTO> getShopDetails(@PathVariable Long shopId) {
         return ResponseEntity.ok(shopService.getShopById(shopId));
     }
 
+    // İŞLETME SAHİBİNİN TÜM BİLGİLERİNİ (AD, ŞEHİR, İLÇE, ADRES, KATEGORİ, TELEFON, LOGO, VİTRİN) GÜNCELLEME ENDPOINT'İ
     @PutMapping(value = "/{shopId}/update-with-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ShopDTO> updateShopWithImage(
             @PathVariable Long shopId,
-            @RequestParam(value = "existingImageUrls") String existingImageUrlsJson,
+            @RequestParam(value = "existingImageUrls", required = false) String existingImageUrlsJson,
             @RequestParam(value = "vitrinFiles", required = false) List<MultipartFile> vitrinFiles,
-            @RequestParam(value = "logo", required = false) MultipartFile logo, // Logo parametresini ekledik
-            @RequestParam("shopName") String shopName,
-            @RequestParam("phoneNumber") String phoneNumber,
-            @RequestParam(value = "logoDeleted", required = false) boolean logoDeleted // Parametreye isim verdik
+            @RequestParam(value = "logo", required = false) MultipartFile logo,
+            @RequestParam(value = "shopName", required = false) String shopName,
+            @RequestParam(value = "phoneNumber", required = false) String phoneNumber,
+            @RequestParam(value = "city", required = false) String city,
+            @RequestParam(value = "district", required = false) String district,
+            @RequestParam(value = "addressText", required = false) String addressText,
+            @RequestParam(value = "category", required = false) String category,
+            @RequestParam(value = "logoDeleted", required = false, defaultValue = "false") boolean logoDeleted
     ) throws IOException {
 
-        Shop shop = shopRepository.findById(shopId).orElseThrow();
+        Optional<Shop> shopOpt = shopRepository.findById(shopId);
+        if (shopOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Shop shop = shopOpt.get();
 
         // 1. LOGO İŞLEMLERİ
         if (logo != null && !logo.isEmpty()) {
-            // Yeni logo yüklendiyse Cloudinary'e yükle
-            Map uploadResult = cloudinary.uploader().upload(logo.getBytes(), ObjectUtils.emptyMap());
-            shop.setImageUrl(uploadResult.get("secure_url").toString());
+            try {
+                Map uploadResult = cloudinary.uploader().upload(logo.getBytes(), ObjectUtils.emptyMap());
+                shop.setImageUrl(uploadResult.get("secure_url").toString());
+            } catch (Exception e) {
+                System.err.println("Cloudinary logo yükleme hatası: " + e.getMessage());
+            }
         } else if (logoDeleted) {
-            // Eğer frontend'den logoDeleted = true geldiyse
             shop.setImageUrl(null);
         }
 
         // 2. Vitrin Görsel İşlemleri (Mevcut ve Yeni)
         List<String> remainingUrls = new ArrayList<>();
-        if (existingImageUrlsJson != null && !existingImageUrlsJson.equals("[]")) {
+        if (existingImageUrlsJson != null && !existingImageUrlsJson.equals("[]") && !existingImageUrlsJson.isBlank()) {
             String cleanJson = existingImageUrlsJson.replace("[", "").replace("]", "").replace("\"", "");
             if (!cleanJson.isEmpty()) {
                 remainingUrls.addAll(Arrays.asList(cleanJson.split(",")));
@@ -218,14 +228,39 @@ public class ShopController {
 
         if (vitrinFiles != null) {
             for (MultipartFile file : vitrinFiles) {
-                Map uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.emptyMap());
-                remainingUrls.add(uploadResult.get("secure_url").toString());
+                if (file != null && !file.isEmpty()) {
+                    try {
+                        Map uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.emptyMap());
+                        remainingUrls.add(uploadResult.get("secure_url").toString());
+                    } catch (Exception e) {
+                        System.err.println("Cloudinary vitrin görseli yükleme hatası: " + e.getMessage());
+                    }
+                }
             }
         }
 
         shop.setVitrinImageUrl(String.join(",", remainingUrls));
-        shop.setName(shopName);
-        shop.setPhoneNumber(phoneNumber);
+        
+        // İşletme sahibinin girdiği tüm metin alanlarını güncelle
+        if (shopName != null && !shopName.isBlank()) {
+            shop.setName(shopName);
+        }
+        if (phoneNumber != null) {
+            shop.setPhoneNumber(phoneNumber);
+        }
+        if (city != null && !city.isBlank()) {
+            shop.setCity(city);
+        }
+        if (district != null && !district.isBlank()) {
+            shop.setDistrict(district);
+        }
+        if (addressText != null && !addressText.isBlank()) {
+            shop.setAddressText(addressText);
+        }
+        if (category != null && !category.isBlank()) {
+            shop.setCategory(category);
+        }
+
         shopRepository.save(shop);
 
         return ResponseEntity.ok(shopService.convertToDTO(shop));
@@ -233,7 +268,6 @@ public class ShopController {
 
     @GetMapping("/category/{category}")
     public List<ShopDTO> getShopsByCategory(@PathVariable String category) {
-        // ShopRepository'den dönen List<Shop>'u DTO'ya dönüştürüyoruz
         return shopRepository.findByCategory(category)
                 .stream()
                 .map(shopService::convertToDTO)
