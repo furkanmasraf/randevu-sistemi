@@ -47,20 +47,44 @@ public class ShopController {
         this.userRepository = userRepository;
     }
 
+    // --- NULL-SAFE DÜKKAN KAYIT METODU (Cannot invoke Object.toString() HATASINI ENGELLER) ---
     @PostMapping("/register")
     public ResponseEntity<?> registerShop(@RequestBody Map<String, Object> payload) {
+        if (payload == null || payload.get("ownerId") == null) {
+            return ResponseEntity.badRequest().body(Map.of("message", "ownerId parametresi gereklidir."));
+        }
+
         Long ownerId = Long.valueOf(payload.get("ownerId").toString());
         User owner = userRepository.findById(ownerId)
                 .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
 
         Shop shop = new Shop();
-        shop.setName(payload.get("name").toString());
-        shop.setCity(payload.get("city").toString());
-        shop.setDistrict(payload.get("district").toString());
-        shop.setAddressText(payload.get("addressText").toString());
-        if (payload.containsKey("category")) {
-            shop.setCategory(payload.get("category").toString());
+        
+        Object nameObj = payload.get("name") != null ? payload.get("name") : payload.get("shopName");
+        String shopName = (nameObj != null && !nameObj.toString().isBlank()) 
+                ? nameObj.toString() 
+                : ((owner.getFirstName() != null ? owner.getFirstName() : "Salon") + " " + (owner.getLastName() != null ? owner.getLastName() : "Kuaför"));
+        shop.setName(shopName);
+
+        Object cityObj = payload.get("city");
+        shop.setCity((cityObj != null && !cityObj.toString().isBlank()) ? cityObj.toString() : "İstanbul");
+
+        Object distObj = payload.get("district");
+        shop.setDistrict((distObj != null && !distObj.toString().isBlank()) ? distObj.toString() : "Beyoğlu");
+
+        Object addrObj = payload.get("addressText");
+        shop.setAddressText((addrObj != null && !addrObj.toString().isBlank()) ? addrObj.toString() : "İstiklal Cad. No:78");
+
+        Object catObj = payload.get("category");
+        shop.setCategory((catObj != null && !catObj.toString().isBlank()) ? catObj.toString() : "Erkek Kuaförü");
+
+        Object phoneObj = payload.get("phoneNumber");
+        if (phoneObj != null && !phoneObj.toString().isBlank()) {
+            shop.setPhoneNumber(phoneObj.toString());
+        } else if (owner.getPhoneNumber() != null) {
+            shop.setPhoneNumber(owner.getPhoneNumber());
         }
+
         shop.setOwner(owner);
 
         Shop savedShop = shopRepository.save(shop);
@@ -98,6 +122,7 @@ public class ShopController {
         return ResponseEntity.ok(response);
     }
 
+    // --- GARANTİLİ VE NULL-SAFE DÜKKAN GETİRME: Kayıtlı bilgileri tam doldurur ---
     @GetMapping("/owner/{userId}")
     public ResponseEntity<?> getShopByOwner(@PathVariable Long userId) {
         Optional<Shop> shopOpt = shopRepository.findByOwnerId(userId);
@@ -107,10 +132,13 @@ public class ShopController {
             if (userOpt.isPresent()) {
                 User owner = userOpt.get();
                 Shop newShop = new Shop();
-                newShop.setName((owner.getFirstName() != null ? owner.getFirstName() : "Salon") + " " + (owner.getLastName() != null ? owner.getLastName() : "") + " Kuaför");
+                String defaultName = (owner.getFirstName() != null ? owner.getFirstName() : "") + " " + (owner.getLastName() != null ? owner.getLastName() : "");
+                defaultName = defaultName.trim().isEmpty() ? "Salon Kuaför" : defaultName.trim() + " Salonu";
+                newShop.setName(defaultName);
+                newShop.setPhoneNumber(owner.getPhoneNumber() != null ? owner.getPhoneNumber() : "");
                 newShop.setCity("İstanbul");
                 newShop.setDistrict("Beyoğlu");
-                newShop.setAddressText("Adres henüz belirtilmedi.");
+                newShop.setAddressText("İstiklal Cad. No:78");
                 newShop.setCategory("Erkek Kuaförü");
                 newShop.setOwner(owner);
                 Shop savedShop = shopRepository.save(newShop);
@@ -124,15 +152,15 @@ public class ShopController {
 
         ShopDTO dto = new ShopDTO();
         dto.setId(shop.getId());
-        dto.setName(shop.getName());
-        dto.setAddressText(shop.getAddressText());
-        dto.setCity(shop.getCity());
-        dto.setDistrict(shop.getDistrict());
-        dto.setCategory(shop.getCategory());
+        dto.setName(shop.getName() != null && !shop.getName().isBlank() ? shop.getName() : shop.getOwner().getFirstName() + " Salonu");
+        dto.setAddressText(shop.getAddressText() != null ? shop.getAddressText() : "");
+        dto.setCity(shop.getCity() != null ? shop.getCity() : "");
+        dto.setDistrict(shop.getDistrict() != null ? shop.getDistrict() : "");
+        dto.setCategory(shop.getCategory() != null ? shop.getCategory() : "Erkek Kuaförü");
         dto.setStartTime(shop.getStartTime());
         dto.setEndTime(shop.getEndTime());
-        dto.setPhoneNumber(shop.getPhoneNumber());
-        dto.setImageUrl(shop.getImageUrl());
+        dto.setPhoneNumber(shop.getPhoneNumber() != null ? shop.getPhoneNumber() : (shop.getOwner().getPhoneNumber() != null ? shop.getOwner().getPhoneNumber() : ""));
+        dto.setImageUrl(shop.getImageUrl() != null ? shop.getImageUrl() : "");
         if (shop.getVitrinImageUrl() != null && !shop.getVitrinImageUrl().isEmpty()) {
             dto.setVitrinImageUrls(Arrays.asList(shop.getVitrinImageUrl().split(",")));
         } else {
@@ -182,7 +210,6 @@ public class ShopController {
         return ResponseEntity.ok(shopService.getShopById(shopId));
     }
 
-    // İŞLETME SAHİBİNİN TÜM BİLGİLERİNİ (AD, ŞEHİR, İLÇE, ADRES, KATEGORİ, TELEFON, LOGO, VİTRİN) GÜNCELLEME ENDPOINT'İ
     @PutMapping(value = "/{shopId}/update-with-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ShopDTO> updateShopWithImage(
             @PathVariable Long shopId,
@@ -205,7 +232,6 @@ public class ShopController {
 
         Shop shop = shopOpt.get();
 
-        // 1. LOGO İŞLEMLERİ
         if (logo != null && !logo.isEmpty()) {
             try {
                 Map uploadResult = cloudinary.uploader().upload(logo.getBytes(), ObjectUtils.emptyMap());
@@ -217,7 +243,6 @@ public class ShopController {
             shop.setImageUrl(null);
         }
 
-        // 2. Vitrin Görsel İşlemleri (Mevcut ve Yeni)
         List<String> remainingUrls = new ArrayList<>();
         if (existingImageUrlsJson != null && !existingImageUrlsJson.equals("[]") && !existingImageUrlsJson.isBlank()) {
             String cleanJson = existingImageUrlsJson.replace("[", "").replace("]", "").replace("\"", "");
@@ -241,7 +266,6 @@ public class ShopController {
 
         shop.setVitrinImageUrl(String.join(",", remainingUrls));
         
-        // İşletme sahibinin girdiği tüm metin alanlarını güncelle
         if (shopName != null && !shopName.isBlank()) {
             shop.setName(shopName);
         }
