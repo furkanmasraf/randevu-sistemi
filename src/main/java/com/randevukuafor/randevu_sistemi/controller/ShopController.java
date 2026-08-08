@@ -47,7 +47,7 @@ public class ShopController {
         this.userRepository = userRepository;
     }
 
-    // --- NULL-SAFE DÜKKAN KAYIT METODU (Cannot invoke Object.toString() HATASINI ENGELLER) ---
+    // --- TEKİL VE GÜVENLİ DÜKKAN KAYIT METODU (MÜKERRER DÜKKAN OLUŞMASINI ENGELLER) ---
     @PostMapping("/register")
     public ResponseEntity<?> registerShop(@RequestBody Map<String, Object> payload) {
         if (payload == null || payload.get("ownerId") == null) {
@@ -58,34 +58,54 @@ public class ShopController {
         User owner = userRepository.findById(ownerId)
                 .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
 
-        Shop shop = new Shop();
-        
+        // Kullanıcının mevcut dükkanı var mı kontrol et (Tekil Dükkan Mantığı)
+        List<Shop> existingShops = shopRepository.findAllByOwnerId(ownerId);
+        Shop shop;
+        if (!existingShops.isEmpty()) {
+            // Var olan dükkanı kullan ve güncelle
+            shop = existingShops.get(existingShops.size() - 1);
+            // Eğer geçmişte mükerrer 2. dükkan oluşturulmuşsa fazlalıkları temizle
+            if (existingShops.size() > 1) {
+                for (int i = 0; i < existingShops.size() - 1; i++) {
+                    try { shopRepository.delete(existingShops.get(i)); } catch (Exception ignored) {}
+                }
+            }
+        } else {
+            shop = new Shop();
+            shop.setOwner(owner);
+        }
+
         Object nameObj = payload.get("name") != null ? payload.get("name") : payload.get("shopName");
-        String shopName = (nameObj != null && !nameObj.toString().isBlank()) 
-                ? nameObj.toString() 
-                : ((owner.getFirstName() != null ? owner.getFirstName() : "Salon") + " " + (owner.getLastName() != null ? owner.getLastName() : "Kuaför"));
-        shop.setName(shopName);
+        if (nameObj != null && !nameObj.toString().isBlank()) {
+            shop.setName(nameObj.toString());
+        }
 
         Object cityObj = payload.get("city");
-        shop.setCity((cityObj != null && !cityObj.toString().isBlank()) ? cityObj.toString() : "İstanbul");
+        if (cityObj != null && !cityObj.toString().isBlank()) {
+            shop.setCity(cityObj.toString());
+        }
 
         Object distObj = payload.get("district");
-        shop.setDistrict((distObj != null && !distObj.toString().isBlank()) ? distObj.toString() : "Beyoğlu");
+        if (distObj != null && !distObj.toString().isBlank()) {
+            shop.setDistrict(distObj.toString());
+        }
 
         Object addrObj = payload.get("addressText");
-        shop.setAddressText((addrObj != null && !addrObj.toString().isBlank()) ? addrObj.toString() : "İstiklal Cad. No:78");
+        if (addrObj != null && !addrObj.toString().isBlank()) {
+            shop.setAddressText(addrObj.toString());
+        }
 
         Object catObj = payload.get("category");
-        shop.setCategory((catObj != null && !catObj.toString().isBlank()) ? catObj.toString() : "Erkek Kuaförü");
+        if (catObj != null && !catObj.toString().isBlank()) {
+            shop.setCategory(catObj.toString());
+        }
 
         Object phoneObj = payload.get("phoneNumber");
         if (phoneObj != null && !phoneObj.toString().isBlank()) {
             shop.setPhoneNumber(phoneObj.toString());
-        } else if (owner.getPhoneNumber() != null) {
+        } else if (shop.getPhoneNumber() == null && owner.getPhoneNumber() != null) {
             shop.setPhoneNumber(owner.getPhoneNumber());
         }
-
-        shop.setOwner(owner);
 
         Shop savedShop = shopRepository.save(shop);
         return ResponseEntity.ok(savedShop);
@@ -122,12 +142,13 @@ public class ShopController {
         return ResponseEntity.ok(response);
     }
 
-    // --- GARANTİLİ VE NULL-SAFE DÜKKAN GETİRME: Kayıtlı bilgileri tam doldurur ---
+    // --- KULLANICIYA AİT DÜKKANI İŞLETME SAHİBİNİN GİRDİĞİ GERÇEK BİLGİLERLE GETİR ---
     @GetMapping("/owner/{userId}")
     public ResponseEntity<?> getShopByOwner(@PathVariable Long userId) {
-        Optional<Shop> shopOpt = shopRepository.findByOwnerId(userId);
+        List<Shop> shops = shopRepository.findAllByOwnerId(userId);
 
-        if (shopOpt.isEmpty()) {
+        Shop shop;
+        if (shops.isEmpty()) {
             Optional<User> userOpt = userRepository.findById(userId);
             if (userOpt.isPresent()) {
                 User owner = userOpt.get();
@@ -141,14 +162,20 @@ public class ShopController {
                 newShop.setAddressText("İstiklal Cad. No:78");
                 newShop.setCategory("Erkek Kuaförü");
                 newShop.setOwner(owner);
-                Shop savedShop = shopRepository.save(newShop);
-                shopOpt = Optional.of(savedShop);
+                shop = shopRepository.save(newShop);
             } else {
                 return ResponseEntity.status(404).body("Kullanıcı ve Dükkan bulunamadı.");
             }
+        } else {
+            // Eğer veritabanında 1'den fazla mükerrer dükkan oluşmuşsa kullanıcının en son oluşturduğu gerçek dükkanı al
+            // ve eski taslak mükerrer kaydı veritabanından temizle
+            shop = shops.get(shops.size() - 1);
+            if (shops.size() > 1) {
+                for (int i = 0; i < shops.size() - 1; i++) {
+                    try { shopRepository.delete(shops.get(i)); } catch (Exception ignored) {}
+                }
+            }
         }
-
-        Shop shop = shopOpt.get();
 
         ShopDTO dto = new ShopDTO();
         dto.setId(shop.getId());

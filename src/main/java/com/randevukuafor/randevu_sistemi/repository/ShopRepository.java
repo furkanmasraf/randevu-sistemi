@@ -9,9 +9,9 @@ import java.util.Optional;
 
 @Repository
 public interface ShopRepository extends JpaRepository<Shop, Long> {
-    // İleride şehir veya ilçeye göre kuaför aratmak için bu metotlar çok işimize yarayacak
     List<Shop> findByCity(String city);
     List<Shop> findByDistrict(String district);
     Optional<Shop> findByOwnerId(Long ownerId);
+    List<Shop> findAllByOwnerId(Long ownerId);
     List<Shop> findByCategory(String category);
 }
