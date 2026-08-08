@@ -67,22 +67,42 @@ public class AppointmentController {
     @PostMapping
     public ResponseEntity<?> createAppointment(@RequestBody Map<String, Object> payload) {
         try {
-            Long shopId = Long.valueOf(payload.get("shopId").toString());
-            Long employeeId = Long.valueOf(payload.get("employeeId").toString());
-            Long serviceId = Long.valueOf(payload.get("serviceId").toString());
-            Long userId = Long.valueOf(payload.get("userId").toString());
+            Object shopIdObj = payload.get("shopId") != null ? payload.get("shopId") : payload.get("id");
+            if (shopIdObj == null) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Dükkan bilgisi (shopId) bulunamadı."));
+            }
+            Long shopId = Long.valueOf(shopIdObj.toString());
 
-            // LocalDateTime.parse için ISO formatı (yyyy-MM-dd'T'HH:mm:ss)
+            Object employeeIdObj = payload.get("employeeId");
+            if (employeeIdObj == null) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Personel bilgisi seçilmedi."));
+            }
+            Long employeeId = Long.valueOf(employeeIdObj.toString());
+
+            Object serviceIdObj = payload.get("serviceId");
+            if (serviceIdObj == null) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Hizmet bilgisi seçilmedi."));
+            }
+            Long serviceId = Long.valueOf(serviceIdObj.toString());
+
+            Object userIdObj = payload.get("userId");
+            if (userIdObj == null) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Kullanıcı oturumu bulunamadı, lütfen giriş yapın."));
+            }
+            Long userId = Long.valueOf(userIdObj.toString());
+
             String timeStr = payload.get("appointmentTime").toString();
             LocalDateTime appointmentTime = LocalDateTime.parse(timeStr);
 
-            // İlgili nesneleri bul
-            User user = userRepository.findById(userId).orElseThrow();
-            Shop shop = shopRepository.findById(shopId).orElseThrow();
-            Employee employee = employeeRepository.findById(employeeId).orElseThrow();
-            Service service = serviceRepository.findById(serviceId).orElseThrow();
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
+            Shop shop = shopRepository.findById(shopId)
+                    .orElseThrow(() -> new RuntimeException("Dükkan bulunamadı"));
+            Employee employee = employeeRepository.findById(employeeId)
+                    .orElseThrow(() -> new RuntimeException("Personel bulunamadı"));
+            Service service = serviceRepository.findById(serviceId)
+                    .orElseThrow(() -> new RuntimeException("Hizmet bulunamadı"));
 
-            // Randevu nesnesini oluştur
             Appointment appointment = new Appointment();
             appointment.setUser(user);
             appointment.setShop(shop);
